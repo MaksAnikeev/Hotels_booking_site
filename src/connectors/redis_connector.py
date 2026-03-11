@@ -2,7 +2,6 @@ import redis.asyncio as redis
 
 
 class RedisConnector:
-
     def __init__(self, host, port, password=None):
         self.port = port
         self.host = host

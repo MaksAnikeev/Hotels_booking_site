@@ -138,7 +138,7 @@ class BaseRepository:
         self,
         attribute: str | None = None,
         ids_for_delete: list | None = None,
-        **filters
+        **filters,
     ):
         safe_filters = self._get_safe_filters(filters)
         if not safe_filters:

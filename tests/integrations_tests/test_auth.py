@@ -56,12 +56,12 @@ async def test_auth_flow(
         assert resp["user_info"]["email"] == new_user_info["email"]
         assert (
             resp["description"]
-            == f'Новый пользователь {new_user_info["first_name"]} успешно добавлен'
+            == f"Новый пользователь {new_user_info['first_name']} успешно добавлен"
         )
     elif response_reg.status_code == 409:
         assert (
             resp["detail"]
-            == f'Пользователь с таким email {new_user_info["email"]} уже существует'
+            == f"Пользователь с таким email {new_user_info['email']} уже существует"
         )
         return
 

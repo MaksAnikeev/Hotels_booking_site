@@ -15,7 +15,7 @@ def send_email_service(emails: list, message: str = "", subject: str = ""):
             server.starttls()
             server.login(msg["From"], settings.GOOGLE_EMAIL_PASSWORD)
             server.send_message(msg)
-            print(f'Письмо отправлено на адреса  {", ".join(emails)}')
+            print(f"Письмо отправлено на адреса  {', '.join(emails)}")
     except Exception as e:
         print(f"Ошибка {e}")
 
