@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from sqlalchemy import select
 
 from src.models.facilities import FacilitiesORM, RoomsFacilitiesORM
@@ -7,12 +9,12 @@ from src.schemas.facilities_schemas import RoomFacilitiesCreateSchemas
 
 
 class FacilitiesRepository(BaseRepository):
-    model = FacilitiesORM
+    model: FacilitiesORM = FacilitiesORM
     mapper = FacilitiesMapper
 
 
 class RoomFacilitiesRepository(BaseRepository):
-    model = RoomsFacilitiesORM
+    model: RoomsFacilitiesORM = RoomsFacilitiesORM
     mapper = RoomFacilitiesDataMapper
 
     async def set_room_facilities(self, room_id, facilities_ids):
@@ -20,10 +22,10 @@ class RoomFacilitiesRepository(BaseRepository):
             room_id=room_id
         )
         query = await self.session.execute(existing_room_facilities_ids_query)
-        existing_room_facilities_ids = set(query.scalars().all())
+        existing_room_facilities_ids: set[int] = set(query.scalars().all())
 
-        facilities_delete_ids = existing_room_facilities_ids - set(facilities_ids)
-        facilities_add_ids = set(facilities_ids) - existing_room_facilities_ids
+        facilities_delete_ids: set[int] = existing_room_facilities_ids - set(facilities_ids)
+        facilities_add_ids: set[int] = set(facilities_ids) - existing_room_facilities_ids
 
         if facilities_add_ids:
             room_facilities = [
@@ -35,6 +37,6 @@ class RoomFacilitiesRepository(BaseRepository):
         if facilities_delete_ids:
             await self.delete_bulk(
                 attribute="facility_id",
-                ids_for_delete=facilities_delete_ids,
+                ids_for_delete=facilities_delete_ids, # type: ignore
                 room_id=room_id,
             )

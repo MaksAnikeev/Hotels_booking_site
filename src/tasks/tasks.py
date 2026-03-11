@@ -1,5 +1,6 @@
 import asyncio
 import os
+from typing import Union
 
 from PIL import Image
 from pathlib import Path
@@ -11,7 +12,7 @@ from src.utils.db_manager import DBManager
 
 
 @celery_instance.task
-def resize_and_save_image(image_path: str) -> None:
+def resize_and_save_image(image_path: Union[str, Path]) -> None:
     output_dir = "src/static/images"
     # Размеры по большей стороне
     sizes = [i for i in range(10000, 2000, 100)]

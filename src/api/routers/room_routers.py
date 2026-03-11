@@ -12,6 +12,7 @@ from src.schemas.rooms_schemas import (
     example_change_room,
     RoomRequestSchemas,
     RoomChangeRequestSchemas,
+    RoomGetSchemas,
 )
 
 router = APIRouter(prefix="/hotels", tags=["Номера"])
@@ -57,7 +58,7 @@ async def add_room(
 ):
     _room_info = RoomCreateSchemas(hotel_id=hotel_id, **room_info.model_dump())
     try:
-        room = await db.rooms.add(_room_info)
+        room: RoomGetSchemas = await db.rooms.add(_room_info)
         room_facilities = [
             RoomFacilitiesCreateSchemas(room_id=room.id, facility_id=f_id)
             for f_id in room_info.facilities_ids

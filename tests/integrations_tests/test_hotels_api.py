@@ -1,14 +1,16 @@
 from pprint import pprint
 
+from httpx import AsyncClient
 
-async def test_get_hotels(ac):
+
+async def test_get_hotels(ac: AsyncClient):
     response = await ac.get(url="/hotels/")
     assert response.status_code == 200
     hotels = response.json()["data"]
     assert len(hotels) == 5
 
 
-async def test_get_hotels_with_params(ac):
+async def test_get_hotels_with_params(ac: AsyncClient):
     params = {"title": 5}
     response = await ac.get(url="/hotels/", params=params)
     assert response.status_code == 200
@@ -17,7 +19,7 @@ async def test_get_hotels_with_params(ac):
     assert hotels["data"][0]["location"] == "Краснодар"
 
 
-async def test_get_free_hotels(ac):
+async def test_get_free_hotels(ac: AsyncClient):
     params = {
         "date_from": "2026-01-25",
         "date_to": "2026-01-30",

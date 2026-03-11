@@ -8,7 +8,9 @@ from src.schemas.booking_shemas import (
     BookingRequestSchemas,
     example_add_booking,
     BookingCreateSchemas,
+    BookingGetSchemas,
 )
+from src.schemas.rooms_schemas import RoomGetSchemas
 
 router = APIRouter(prefix="/bookings", tags=["Бронирование"])
 
@@ -41,7 +43,7 @@ async def get_room_booking(
         room_id=room_id, date_from=date_from, date_to=date_to
     )
     quantity_booked_rooms = len(booking)
-    room = await db.rooms.get_one_or_none(id=room_id)
+    room: RoomGetSchemas | None = await db.rooms.get_one_or_none(id=room_id)
     quantity_rooms = room.quantity
     quantity_free_rooms = quantity_rooms - quantity_booked_rooms
     return {
@@ -62,11 +64,11 @@ async def add_booking(
 ):
     if booking_info.date_from > booking_info.date_to:
         raise HTTPException(status_code=400, detail="Дата выезда раньше даты заезда")
-    room = await db.rooms.get_one_or_none(id=booking_info.room_id)
+    room: RoomGetSchemas | None = await db.rooms.get_one_or_none(id=booking_info.room_id)
     _booking_info = BookingCreateSchemas(
         user_id=user_id, price=room.price, **booking_info.model_dump()
     )
-    booking = await db.booking.add_booking(_booking_info, hotel_id=room.hotel_id)
+    booking: BookingGetSchemas | None = await db.booking.add_booking(_booking_info, hotel_id=room.hotel_id)
     await db.commit()
     return {
         "status": "OK",

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence, Any, Generic, Type
 
 from fastapi import HTTPException
 
@@ -6,12 +6,13 @@ from pydantic import BaseModel
 from sqlalchemy import select, insert, update, inspect, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.repositories.mappers.base_mapp import DataMapper
+from src.repositories.mappers.base_mapp import DataMapper, DBModelType, SchemaType
 
 
-class BaseRepository:
-    model = None
-    mapper: DataMapper = None
+class BaseRepository(Generic[DBModelType, SchemaType]):
+    model: Type[DBModelType]
+    mapper: Type[DataMapper[DBModelType, SchemaType]]
+    session: AsyncSession
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -59,7 +60,7 @@ class BaseRepository:
             )
         return self.mapper.map_to_domain_entity(existing[0])
 
-    async def get_all_with_parameters(self, **filter_by) -> list[BaseModel]:
+    async def get_all_with_parameters(self, **filter_by) -> list[BaseModel | Any]:
         safe_filters = self._get_safe_filters(filter_by)
         if not safe_filters:
             raise HTTPException(
@@ -72,19 +73,19 @@ class BaseRepository:
 
     async def get_all_with_any_parameters(
         self, *filter, **filter_by
-    ) -> list[BaseModel]:
+    ) -> list[BaseModel| Any]:
         query = select(self.model).filter(*filter).filter_by(**filter_by)
         query_result = await self.session.execute(query)
         result = query_result.scalars().all()
         return self._to_schemas(result)
 
-    async def get_all(self, *args, **kwargs):
+    async def get_all(self, *args, **kwargs) -> list[BaseModel | Any]:
         query = select(self.model)
         query_result = await self.session.execute(query)
         result = query_result.scalars().all()
         return self._to_schemas(result)
 
-    async def get_one_or_none(self, **filters) -> BaseModel:
+    async def get_one_or_none(self, **filters) -> BaseModel | None | Any:
         safe_filters = self._get_safe_filters(filters)
         if not safe_filters:
             raise HTTPException(
@@ -93,13 +94,13 @@ class BaseRepository:
         existing = await self._check_quantity_obj(safe_filters)
         return existing
 
-    async def add(self, data: BaseModel) -> BaseModel:
+    async def add(self, data: BaseModel) -> BaseModel | Any:
         stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         # print(stmt.compile(async_engine, compile_kwargs={'literal_binds': True}))
         result = await self.session.execute(stmt)
         return self.mapper.map_to_domain_entity(result.scalars().one())
 
-    async def add_bulk(self, data: list[BaseModel]):
+    async def add_bulk(self, data: Sequence[BaseModel]):
         stmt = insert(self.model).values([item.model_dump() for item in data])
         await self.session.execute(stmt)
 

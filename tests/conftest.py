@@ -1,6 +1,7 @@
 # ruff: noqa: E402
 
 import json
+from typing import AsyncGenerator
 from unittest import mock
 
 import pytest
@@ -36,12 +37,12 @@ async def check_test():
 
 
 @pytest.fixture()
-async def db() -> DBManager:
+async def db() -> AsyncGenerator[DBManager, None]:
     async with DBManager(session_factory=async_session_factory_null_pull) as db:
         yield db
 
 
-async def db_null_pull() -> DBManager:
+async def db_null_pull() -> AsyncGenerator[DBManager, None]:
     async with DBManager(session_factory=async_session_factory_null_pull) as db:
         yield db
 
@@ -62,7 +63,7 @@ async def async_main(check_test):
 
 
 @pytest.fixture(scope="session")
-async def ac() -> AsyncClient:
+async def ac() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
@@ -70,7 +71,7 @@ async def ac() -> AsyncClient:
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def register_user(check_test, ac):
+async def register_user(check_test, ac: AsyncClient):
     user_info = {
         "email": "cat@pes.ru",
         "first_name": "Pavel",
@@ -81,7 +82,7 @@ async def register_user(check_test, ac):
 
 
 @pytest.fixture(scope="session")
-async def auth_ac(register_user, ac) -> AsyncClient:
+async def auth_ac(register_user, ac: AsyncClient) -> AsyncGenerator[AsyncClient, None]:
     user_info = {"email": "cat@pes.ru", "password": "1234"}
     await ac.post("/user/login", json=user_info)
     assert ac.cookies["access_token"]

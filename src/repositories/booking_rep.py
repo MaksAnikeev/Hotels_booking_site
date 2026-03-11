@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Sequence
 
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -39,7 +40,7 @@ class BookingRepository(BaseRepository):
             data.date_from, data.date_to, hotel_id
         )
         result = await self.session.execute(free_rooms_ids_query)
-        free_rooms_ids = result.scalars().all()
+        free_rooms_ids: Sequence[int] = result.scalars().all()
         if data.room_id not in free_rooms_ids:
             raise HTTPException(
                 status_code=404, detail="Нет свободных номеров на эту дату"

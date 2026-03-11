@@ -15,6 +15,7 @@ celery
 pytest-dotenv
 pytest-asyncio
 ruff
+pyright
 bcrypt==4.0.1
 PyJWT==2.9.0
 passlib==1.7.4

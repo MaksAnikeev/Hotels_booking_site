@@ -1,4 +1,5 @@
 import pytest
+from httpx import AsyncClient
 
 from src.services.auth import AuthService
 
@@ -39,7 +40,7 @@ async def test_auth_flow(
     status_code_add,
     status_code_login,
     check_test,
-    ac,
+    ac: AsyncClient,
 ):
     new_user_info = {
         "email": email,

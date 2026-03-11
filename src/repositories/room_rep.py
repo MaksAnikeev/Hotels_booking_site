@@ -28,7 +28,7 @@ class RoomsRepository(BaseRepository):
 
         query = (
             select(
-                self.model,
+                self.model, # type: ignore
                 (
                     self.model.quantity
                     - func.coalesce(rooms_booked_again.c.booked_rooms, 0)
@@ -65,7 +65,7 @@ class RoomsRepository(BaseRepository):
         query = (
             select(self.model)
             .filter_by(**safe_filters)
-            .options(selectinload(self.model.facilities))
+            .options(selectinload(self.model.facilities)) # type: ignore
         )
         query_result = await self.session.execute(query)
         result = query_result.scalars().one_or_none()

@@ -1,4 +1,5 @@
 import pytest
+from httpx import AsyncClient
 
 
 @pytest.mark.parametrize(
@@ -14,7 +15,7 @@ import pytest
         (1, "2026-02-16", "2026-02-22", 404),
     ],
 )
-async def test_create_booking(room_id, date_from, date_to, status_code, auth_ac):
+async def test_create_booking(room_id, date_from, date_to, status_code, auth_ac: AsyncClient):
     booking_data = {
         "room_id": room_id,
         "date_from": date_from,
@@ -40,7 +41,7 @@ async def test_create_booking(room_id, date_from, date_to, status_code, auth_ac)
     ],
 )
 async def test_add_and_get_bookings(
-    room_id, date_from, date_to, quantity_booked, auth_ac, delete_all_bookings
+    room_id, date_from, date_to, quantity_booked, auth_ac: AsyncClient, delete_all_bookings
 ):
     booking_data = {
         "room_id": room_id,
