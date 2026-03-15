@@ -3,6 +3,8 @@ from datetime import date
 from fastapi import APIRouter, Body, Query, HTTPException
 
 from src.api.dependencies import DBDep, UserIDDep
+from src.api.routers.utils import check_date_to_after_date_from
+from src.exceptions import ObjectNotFoundException, AllRoomIsBookedException, NotAllNecessaryParamsException
 from src.models.booking import BookingORM
 from src.schemas.booking_shemas import (
     BookingRequestSchemas,
@@ -39,11 +41,20 @@ async def get_room_booking(
     date_from: date = Query(date(2026, 1, 31), description="Дата заезда"),
     date_to: date = Query(date(2026, 2, 2), description="Дата выезда"),
 ):
-    booking = await db.booking.get_booking_to_date(
-        room_id=room_id, date_from=date_from, date_to=date_to
-    )
+    check_date_to_after_date_from(date_from, date_to)
+
+    try:
+        booking = await db.booking.get_booking_to_date(
+            room_id=room_id, date_from=date_from, date_to=date_to
+        )
+    except NotAllNecessaryParamsException:
+        raise HTTPException(
+            status_code=400,
+            detail="не указана полностью временной диапазон date_from date_to",
+        )
+
     quantity_booked_rooms = len(booking)
-    room: RoomGetSchemas | None = await db.rooms.get_one_or_none(id=room_id)
+    room: RoomGetSchemas = await db.rooms.get_one(id=room_id)
     quantity_rooms = room.quantity
     quantity_free_rooms = quantity_rooms - quantity_booked_rooms
     return {
@@ -62,13 +73,20 @@ async def add_booking(
     db: DBDep,
     booking_info: BookingRequestSchemas = Body(openapi_examples=example_add_booking),
 ):
-    if booking_info.date_from > booking_info.date_to:
-        raise HTTPException(status_code=400, detail="Дата выезда раньше даты заезда")
-    room: RoomGetSchemas | None = await db.rooms.get_one_or_none(id=booking_info.room_id)
+    check_date_to_after_date_from(booking_info.date_from, booking_info.date_to)
+
+    try:
+        room: RoomGetSchemas = await db.rooms.get_one(id=booking_info.room_id)
+    except ObjectNotFoundException:
+        raise HTTPException(404, 'Такой номер не найден')
     _booking_info = BookingCreateSchemas(
         user_id=user_id, price=room.price, **booking_info.model_dump()
     )
-    booking: BookingGetSchemas | None = await db.booking.add_booking(_booking_info, hotel_id=room.hotel_id)
+    try:
+        booking: BookingGetSchemas= await db.booking.add_booking(_booking_info, hotel_id=room.hotel_id)
+    except AllRoomIsBookedException as ex:
+        raise HTTPException(status_code=409, detail=ex.detail)
+
     await db.commit()
     return {
         "status": "OK",

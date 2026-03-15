@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, Query, HTTPException, status, Response
-from sqlalchemy.exc import IntegrityError
 
 from src.api.dependencies import PaginationDep, UserIDDep, DBDep
+from src.exceptions import AlreadyExistedException, ObjectNotFoundException
 from src.schemas.users_schemas import (
     UserRequestSchemas,
     UserCreateSchemas,
@@ -37,7 +37,7 @@ async def who_are_me(
     user_id: UserIDDep,
     db: DBDep,
 ):
-    user = await db.users.get_one_or_none(id=user_id)
+    user = await db.users.get_one(id=user_id)
     return {"status": "success", "data": user, "details": None}
 
 
@@ -63,7 +63,7 @@ async def add_user(
             "description": f"Новый пользователь {new_user.first_name} успешно добавлен",
             "user_info": new_user,
         }
-    except IntegrityError:
+    except AlreadyExistedException:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Пользователь с таким email {user_info.email} уже существует",
@@ -76,7 +76,13 @@ async def user_login(
     db: DBDep,
     user_info: UserRequestSchemas = Body(openapi_examples=example_add_user),
 ):
-    user = await db.users.get_user_with_hashed_password(email=user_info.email)
+    try:
+        user = await db.users.get_user_with_hashed_password(email=user_info.email)
+    except ObjectNotFoundException:
+        raise HTTPException(
+            status_code=401,
+            detail="Пользователь с таким email не найден. Необходима регистрация.",
+        )
     if not AuthService().verify_password(user_info.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Неверно указанный пароль.")
 

@@ -1,9 +1,11 @@
 from datetime import date
 
 from fastapi import HTTPException, APIRouter, Body, Query
-from sqlalchemy.exc import IntegrityError
 
 from src.api.dependencies import DBDep
+from src.api.routers.utils import check_date_to_after_date_from
+from src.exceptions import ObjectNotFoundException, TooLongParameterException, HotelNotFoundHTTPException, \
+    HotelOrRoomNotFoundHTTPException
 from src.schemas.facilities_schemas import RoomFacilitiesCreateSchemas
 from src.schemas.rooms_schemas import (
     RoomCreateSchemas,
@@ -34,9 +36,14 @@ async def get_free_rooms(
     date_from: date = Query(date(2026, 1, 25), description="Дата заезда"),
     date_to: date = Query(date(2026, 1, 30), description="Дата выезда"),
 ):
-    rooms = await db.rooms.get_rooms_to_date(
-        date_from=date_from, date_to=date_to, hotel_id=hotel_id
-    )
+    check_date_to_after_date_from(date_from, date_to)
+
+    try:
+        rooms = await db.rooms.get_rooms_to_date(
+            date_from=date_from, date_to=date_to, hotel_id=hotel_id
+        )
+    except ObjectNotFoundException:
+        raise HotelNotFoundHTTPException
     return {"status": "success", "rooms": rooms, "details": None}
 
 
@@ -46,7 +53,10 @@ async def get_room(
     room_id: int,
     db: DBDep,
 ):
-    room = await db.rooms.get_one_or_none_with_relship(id=room_id, hotel_id=hotel_id)
+    try:
+        room = await db.rooms.get_one_or_none_with_relship(id=room_id, hotel_id=hotel_id)
+    except ObjectNotFoundException:
+        raise HotelOrRoomNotFoundHTTPException
     return {"status": "success", "room": room, "detail": None}
 
 
@@ -59,21 +69,28 @@ async def add_room(
     _room_info = RoomCreateSchemas(hotel_id=hotel_id, **room_info.model_dump())
     try:
         room: RoomGetSchemas = await db.rooms.add(_room_info)
-        room_facilities = [
-            RoomFacilitiesCreateSchemas(room_id=room.id, facility_id=f_id)
-            for f_id in room_info.facilities_ids
-        ]
-        await db.room_facilities.add_bulk(room_facilities)
-        await db.commit()
-        return {
-            "status": "OK",
-            "description": f"Номер с названием {room.title} успешно добавлен в отель с ид {room.hotel_id}.",
-            "room_info": room,
-        }
-    except IntegrityError:
+    except ObjectNotFoundException:
         raise HTTPException(
-            status_code=404, detail="Отеля с таким ид не существует в базе данных"
+            status_code=404, detail="Отель с таким ид не найден"
         )
+    room_facilities = [
+        RoomFacilitiesCreateSchemas(room_id=room.id, facility_id=f_id)
+        for f_id in room_info.facilities_ids
+    ]
+    try:
+        await db.room_facilities.add_bulk(room_facilities)
+    except ObjectNotFoundException:
+        raise HTTPException(
+            status_code=404, detail="Указаны не существующие удобства"
+        )
+
+    await db.commit()
+    return {
+        "status": "OK",
+        "description": f"Номер с названием {room.title} успешно добавлен в отель с ид {room.hotel_id}.",
+        "room_info": room,
+    }
+
 
 
 @router.put("/{hotel_id}/rooms/{room_id}", summary="Изменить данные по номеру")
@@ -89,21 +106,24 @@ async def change_room(
             data=_room_info,
             id=room_id,
         )
-
+    except ObjectNotFoundException:
+        raise HotelOrRoomNotFoundHTTPException
+    except TooLongParameterException as ex:
+        raise HTTPException(400, detail=ex.detail)
+    try:
         await db.room_facilities.set_room_facilities(
             room_id=room.id,
             facilities_ids=room_info.facilities_ids,
         )
-        await db.commit()
-        return {
-            "status": "OK",
-            "description": f"Номер с ид {room.id} успешно изменен.",
-            "new_room_info": room,
-        }
-    except IntegrityError:
-        raise HTTPException(
-            status_code=404, detail="Отеля с таким ид не существует в базе данных"
-        )
+    except ObjectNotFoundException:
+        raise HTTPException(404, 'Указаны не существующие удобства')
+
+    await db.commit()
+    return {
+        "status": "OK",
+        "description": f"Номер с ид {room.id} успешно изменен.",
+        "new_room_info": room,
+    }
 
 
 @router.patch(
@@ -119,21 +139,28 @@ async def part_change_room(
     _room_info = RoomChangeSchemas(hotel_id=hotel_id, **room_info_dict)
     try:
         room = await db.rooms.edit(data=_room_info, id=room_id, hotel_id=hotel_id)
-        if "facilities_ids" in room_info_dict:
+
+    except ObjectNotFoundException:
+        raise HotelOrRoomNotFoundHTTPException
+    except TooLongParameterException as ex:
+        raise HTTPException(400, detail=ex.detail)
+
+
+    if "facilities_ids" in room_info_dict:
+        try:
             await db.room_facilities.set_room_facilities(
                 room_id=room.id,
                 facilities_ids=room_info_dict["facilities_ids"],
             )
-        await db.commit()
-        return {
-            "status": "OK",
-            "description": f"Номер с ид {room.id} успешно изменен.",
-            "new_room_info": room,
-        }
-    except IntegrityError:
-        raise HTTPException(
-            status_code=404, detail="Номера с таким ид не существует в базе данных"
-        )
+        except ObjectNotFoundException:
+            raise HTTPException(404, 'Указаны не существующие удобства')
+
+    await db.commit()
+    return {
+        "status": "OK",
+        "description": f"Номер с ид {room.id} успешно изменен.",
+        "new_room_info": room,
+    }
 
 
 @router.delete("/{hotel_id}/room/{room_id}", summary="Удалить номер по ИД")
@@ -142,7 +169,12 @@ async def del_room(
     room_id: int,
     db: DBDep,
 ):
-    room = await db.rooms.delete(id=room_id, hotel_id=hotel_id)
+    try:
+        room = await db.rooms.delete(id=room_id, hotel_id=hotel_id)
+    except ObjectNotFoundException:
+        raise HotelOrRoomNotFoundHTTPException
+    except TooLongParameterException as ex:
+        raise HTTPException(400, detail=ex.detail)
     await db.commit()
     return {
         "status": "OK",

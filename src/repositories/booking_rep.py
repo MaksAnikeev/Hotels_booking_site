@@ -1,10 +1,10 @@
 from datetime import date
 from typing import Sequence
 
-from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select, and_, insert
 
+from src.exceptions import ObjectNotFoundException, AllRoomIsBookedException, NotAllNecessaryParamsException
 from src.models.booking import BookingORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import BookingDataMapper
@@ -18,10 +18,7 @@ class BookingRepository(BaseRepository):
     async def get_booking_to_date(self, room_id, date_from, date_to):
         query = select(self.model).filter_by(room_id=room_id)
         if not date_from or not date_to:
-            raise HTTPException(
-                status_code=400,
-                detail="не указана полностью временной диапазон date_from date_to",
-            )
+            raise NotAllNecessaryParamsException
         query = query.where(
             and_(BookingORM.date_from <= date_to, BookingORM.date_to >= date_from)
         )
@@ -42,9 +39,7 @@ class BookingRepository(BaseRepository):
         result = await self.session.execute(free_rooms_ids_query)
         free_rooms_ids: Sequence[int] = result.scalars().all()
         if data.room_id not in free_rooms_ids:
-            raise HTTPException(
-                status_code=404, detail="Нет свободных номеров на эту дату"
-            )
+            raise AllRoomIsBookedException
         stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         # print(stmt.compile(async_engine, compile_kwargs={'literal_binds': True}))
         result = await self.session.execute(stmt)

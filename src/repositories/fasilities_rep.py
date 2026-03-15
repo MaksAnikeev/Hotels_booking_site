@@ -1,7 +1,8 @@
-from typing import Sequence
-
+from asyncpg import ForeignKeyViolationError
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
+from src.exceptions import ObjectNotFoundException
 from src.models.facilities import FacilitiesORM, RoomsFacilitiesORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import FacilitiesMapper, RoomFacilitiesDataMapper
@@ -32,7 +33,13 @@ class RoomFacilitiesRepository(BaseRepository):
                 RoomFacilitiesCreateSchemas(room_id=room_id, facility_id=f_id)
                 for f_id in facilities_add_ids
             ]
-            await self.add_bulk(room_facilities)
+            try:
+                await self.add_bulk(room_facilities)
+            except IntegrityError as ex:
+                if type(ex.orig.__cause__) == ForeignKeyViolationError:
+                    raise ObjectNotFoundException
+                else:
+                    raise ex
 
         if facilities_delete_ids:
             await self.delete_bulk(

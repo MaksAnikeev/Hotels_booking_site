@@ -1,12 +1,17 @@
 from typing import List, Sequence, Any, Generic, Type
 
-from fastapi import HTTPException
+import sqlalchemy
+from asyncpg import UniqueViolationError, ForeignKeyViolationError
 
 from pydantic import BaseModel
 from sqlalchemy import select, insert, update, inspect, delete
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.exceptions import ObjectNotFoundException, TooLongParameterException, \
+    TooManyObjectsException, NotAllowedParameterException, AlreadyExistedException
 from src.repositories.mappers.base_mapp import DataMapper, DBModelType, SchemaType
+from src.repositories.utils import check_safe_filters
 
 
 class BaseRepository(Generic[DBModelType, SchemaType]):
@@ -46,26 +51,21 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
         Проверяет количество объектов фильтрации перед изменением или удалением
         """
         query = select(self.model).filter_by(**safe_filters)
-        query_result = await self.session.execute(query)
+        try:
+            query_result = await self.session.execute(query)
+        except sqlalchemy.exc.DBAPIError:
+            raise TooLongParameterException
+
         existing = query_result.scalars().all()
         if not existing:
-            raise HTTPException(
-                status_code=404, detail="Объект с такими параметрами не найден"
-            )
+            raise ObjectNotFoundException
         if len(existing) > 1:
-            raise HTTPException(
-                status_code=422,
-                detail="По данным параметрам найдено несколько объектов,"
-                " уточните параметры поиска",
-            )
+            raise TooManyObjectsException
         return self.mapper.map_to_domain_entity(existing[0])
 
     async def get_all_with_parameters(self, **filter_by) -> list[BaseModel | Any]:
         safe_filters = self._get_safe_filters(filter_by)
-        if not safe_filters:
-            raise HTTPException(
-                status_code=400, detail="Указаны недопустимые параметры поиска"
-            )
+        check_safe_filters(safe_filters)
         query = select(self.model).filter_by(**safe_filters)
         query_result = await self.session.execute(query)
         result = query_result.scalars().all()
@@ -85,31 +85,39 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
         result = query_result.scalars().all()
         return self._to_schemas(result)
 
-    async def get_one_or_none(self, **filters) -> BaseModel | None | Any:
+    async def get_one(self, **filters) -> BaseModel | None | Any:
         safe_filters = self._get_safe_filters(filters)
-        if not safe_filters:
-            raise HTTPException(
-                status_code=400, detail=" Указаны недопустимые параметры поиска"
-            )
+        check_safe_filters(safe_filters)
         existing = await self._check_quantity_obj(safe_filters)
         return existing
 
     async def add(self, data: BaseModel) -> BaseModel | Any:
         stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         # print(stmt.compile(async_engine, compile_kwargs={'literal_binds': True}))
-        result = await self.session.execute(stmt)
+        try:
+            result = await self.session.execute(stmt)
+        except IntegrityError as ex:
+            if type(ex.orig.__cause__) == UniqueViolationError:
+                raise AlreadyExistedException
+            elif type(ex.orig.__cause__) == ForeignKeyViolationError:
+                raise ObjectNotFoundException
+            else:
+                raise ex
         return self.mapper.map_to_domain_entity(result.scalars().one())
 
     async def add_bulk(self, data: Sequence[BaseModel]):
         stmt = insert(self.model).values([item.model_dump() for item in data])
-        await self.session.execute(stmt)
+        try:
+            await self.session.execute(stmt)
+        except IntegrityError as ex:
+            if type(ex.orig.__cause__) == ForeignKeyViolationError:
+                raise ObjectNotFoundException
+            else:
+                raise ex
 
     async def edit(self, data: BaseModel, **filters) -> BaseModel:
         safe_filters = self._get_safe_filters(filters)
-        if not safe_filters:
-            raise HTTPException(
-                status_code=400, detail=" Указаны недопустимые параметры поиска"
-            )
+        check_safe_filters(safe_filters)
         existing = await self._check_quantity_obj(safe_filters)
         stmt = (
             update(self.model)
@@ -117,16 +125,18 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
             .values(**data.model_dump(exclude_unset=True))
             .returning(self.model)
         )
-
-        new_result = await self.session.execute(stmt)
+        try:
+            new_result = await self.session.execute(stmt)
+        except IntegrityError as ex:
+            if type(ex.orig.__cause__) == ForeignKeyViolationError:
+                raise ObjectNotFoundException
+            else:
+                raise ex
         return self.mapper.map_to_domain_entity(new_result.scalars().one())
 
     async def delete(self, **filters) -> BaseModel:
         safe_filters = self._get_safe_filters(filters)
-        if not safe_filters:
-            raise HTTPException(
-                status_code=400, detail=" Указаны недопустимые параметры поиска"
-            )
+        check_safe_filters(safe_filters)
         existing = await self._check_quantity_obj(safe_filters)
         stmt = (
             delete(self.model).where(self.model.id == existing.id).returning(self.model)
@@ -142,10 +152,7 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
         **filters,
     ):
         safe_filters = self._get_safe_filters(filters)
-        if not safe_filters:
-            raise HTTPException(
-                status_code=400, detail="Указаны недопустимые параметры поиска"
-            )
+        check_safe_filters(safe_filters)
         query_for_delete = select(self.model.id).filter_by(**safe_filters)
         if attribute and ids_for_delete and hasattr(self.model, attribute):
             query_for_delete = query_for_delete.where(

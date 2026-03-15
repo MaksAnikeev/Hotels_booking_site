@@ -10,9 +10,9 @@ from httpx import AsyncClient
         (1, "2026-02-16", "2026-02-21", 200),
         (1, "2026-02-17", "2026-02-22", 200),
         (1, "2026-02-15", "2026-02-20", 200),
-        (1, "2026-02-18", "2026-02-21", 404),
+        (1, "2026-02-18", "2026-02-21", 409),
         (1, "2026-02-25", "2026-02-27", 200),
-        (1, "2026-02-16", "2026-02-22", 404),
+        (1, "2026-02-16", "2026-02-22", 409),
     ],
 )
 async def test_create_booking(room_id, date_from, date_to, status_code, auth_ac: AsyncClient):
@@ -29,7 +29,7 @@ async def test_create_booking(room_id, date_from, date_to, status_code, auth_ac:
         assert res["status"] == "OK"
         assert "room_info" in res
     else:
-        assert res["detail"] == "Нет свободных номеров на эту дату"
+        assert res["detail"] == "Нет свободных номеров данного класса на выбранную дату"
 
 
 @pytest.mark.parametrize(

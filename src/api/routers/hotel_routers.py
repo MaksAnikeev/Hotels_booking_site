@@ -1,7 +1,11 @@
 from datetime import date
 
-from fastapi import Query, APIRouter, Body
+from fastapi import Query, APIRouter, Body, HTTPException
 from fastapi_cache.decorator import cache
+
+from src.api.routers.utils import check_date_to_after_date_from
+from src.exceptions import ObjectNotFoundException, AllRoomIsBookedException, TooLongParameterException, \
+    TooManyObjectsException, NotAllowedParameterException, AlreadyExistedException, HotelNotFoundHTTPException
 
 from src.api.dependencies import PaginationDep, DBDep
 from src.schemas.hotels_schemas import (
@@ -43,6 +47,7 @@ async def get_free_hotels(
     date_from: date = Query(date(2026, 1, 25), description="Дата заезда"),
     date_to: date = Query(date(2026, 1, 30), description="Дата выезда"),
 ):
+    check_date_to_after_date_from(date_from, date_to)
 
     hotels = await db.hotels.get_all_to_date(
         title=title,
@@ -61,7 +66,16 @@ async def get_hotel(
     hotel_id: int,
     db: DBDep,
 ):
-    hotel = await db.hotels.get_one_or_none(id=hotel_id)
+    try:
+        hotel = await db.hotels.get_one(id=hotel_id)
+
+    except ObjectNotFoundException:
+        raise HotelNotFoundHTTPException
+    except TooLongParameterException as ex:
+        raise HTTPException(400, detail=ex.detail)
+    except TooManyObjectsException as ex:
+        raise HTTPException(422, detail=ex.detail)
+
     return {"status": "success", "data": hotel, "detail": None}
 
 
@@ -70,7 +84,10 @@ async def add_hotel(
     db: DBDep,
     hotel_info: HotelCreateSchemas = Body(openapi_examples=example_add_hotel),
 ):
-    hotel = await db.hotels.add(hotel_info)
+    try:
+        hotel = await db.hotels.add(hotel_info)
+    except AlreadyExistedException:
+        raise HTTPException(409, detail='Отель с такими параметрами уже существует')
     await db.commit()
     return {
         "status": "OK",
@@ -85,10 +102,21 @@ async def change_hotel(
     db: DBDep,
     hotel_info: HotelCreateSchemas = Body(openapi_examples=example_add_hotel),
 ) -> dict:
-    hotel = await db.hotels.edit(
-        data=hotel_info,
-        id=hotel_id,
-    )
+
+    try:
+        hotel = await db.hotels.edit(
+            data=hotel_info,
+            id=hotel_id,
+        )
+    except ObjectNotFoundException:
+        raise HotelNotFoundHTTPException
+    except TooLongParameterException as ex:
+        raise HTTPException(400, detail=ex.detail)
+    except TooManyObjectsException as ex:
+        raise HTTPException(422, detail=ex.detail)
+    except NotAllowedParameterException as ex:
+            raise HTTPException(422, detail=ex.detail)
+
     await db.commit()
     return {
         "status": "OK",
@@ -103,11 +131,21 @@ async def part_change_hotel(
     db: DBDep,
     hotel_info: HotelChangeSchemas = Body(openapi_examples=example_change_hotel),
 ) -> dict:
-    hotel = await db.hotels.edit(
-        data=hotel_info,
-        is_patch=True,
-        id=hotel_id,
-    )
+    try:
+        hotel = await db.hotels.edit(
+            data=hotel_info,
+            is_patch=True,
+            id=hotel_id,
+        )
+    except ObjectNotFoundException:
+        raise HotelNotFoundHTTPException
+    except TooLongParameterException as ex:
+        raise HTTPException(400, detail=ex.detail)
+    except TooManyObjectsException as ex:
+        raise HTTPException(422, detail=ex.detail)
+    except NotAllowedParameterException as ex:
+            raise HTTPException(422, detail=ex.detail)
+
     await db.commit()
     return {
         "status": "OK",
@@ -121,9 +159,17 @@ async def del_hotel(
     hotel_id: int,
     db: DBDep,
 ):
-    hotel = await db.hotels.delete(
-        id=hotel_id,
-    )
+    try:
+        hotel = await db.hotels.delete(
+            id=hotel_id,
+        )
+    except ObjectNotFoundException:
+        raise HotelNotFoundHTTPException
+    except TooLongParameterException as ex:
+        raise HTTPException(400, detail=ex.detail)
+    except TooManyObjectsException as ex:
+        raise HTTPException(422, detail=ex.detail)
+
     await db.commit()
     return {
         "status": "OK",

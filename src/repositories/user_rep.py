@@ -1,7 +1,7 @@
-from fastapi import HTTPException
 from pydantic import EmailStr
 from sqlalchemy import select, func
 
+from src.exceptions import ObjectNotFoundException
 from src.models.users import UsersORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import UserDataMapper
@@ -32,8 +32,5 @@ class UsersRepository(BaseRepository):
         query_result = await self.session.execute(query)
         result = query_result.scalars().one_or_none()
         if not result:
-            raise HTTPException(
-                status_code=401,
-                detail="Пользователь с таким email не найден. Необходима регистрация.",
-            )
+            raise ObjectNotFoundException
         return UserGetHashedPassword.model_validate(result, from_attributes=True)

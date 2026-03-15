@@ -1,5 +1,8 @@
 import smtplib
+from datetime import date
 from email.mime.text import MIMEText
+
+from fastapi import HTTPException
 
 from src.config import settings
 
@@ -33,3 +36,8 @@ def send_email_service(emails: list, message: str = "", subject: str = ""):
                 print(f"Письмо отправлено на адрес  {email}")
         except Exception as e:
             print(f"Ошибка {e}")
+
+
+def check_date_to_after_date_from(date_from: date, date_to: date):
+    if date_from >= date_to:
+        raise HTTPException(status_code=400, detail="Дата выезда должна быть позже даты заезда")

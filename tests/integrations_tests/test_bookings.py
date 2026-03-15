@@ -6,6 +6,7 @@ from datetime import date
 import pytest
 from fastapi import HTTPException
 
+from src.exceptions import ObjectNotFoundException
 from src.schemas.booking_shemas import BookingCreateSchemas, BookingChangeSchemas
 from src.utils.db_manager import DBManager
 
@@ -27,7 +28,7 @@ async def test_booking_crud(db: DBManager):
         == booking_data.price * (booking_data.date_to - booking_data.date_from).days
     )
 
-    existing_booking = await db.booking.get_one_or_none(id=new_booking.id)
+    existing_booking = await db.booking.get_one(id=new_booking.id)
     assert existing_booking
 
     data_for_edit = BookingChangeSchemas(
@@ -42,7 +43,6 @@ async def test_booking_crud(db: DBManager):
     )
 
     await db.booking.delete(id=existing_booking.id)
-    with pytest.raises(HTTPException) as exc_info:
-        await db.booking.get_one_or_none(id=existing_booking.id)
-    assert exc_info.value.status_code == 404
+    with pytest.raises(ObjectNotFoundException) as exc_info:
+        await db.booking.get_one(id=existing_booking.id)
     assert "Объект с такими параметрами не найден" in exc_info.value.detail
