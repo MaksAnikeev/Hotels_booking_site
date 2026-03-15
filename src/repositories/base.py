@@ -8,8 +8,12 @@ from sqlalchemy import select, insert, update, inspect, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.exceptions import ObjectNotFoundException, TooLongParameterException, \
-    TooManyObjectsException, NotAllowedParameterException, AlreadyExistedException
+from src.exceptions import (
+    ObjectNotFoundException,
+    TooLongParameterException,
+    TooManyObjectsException,
+    AlreadyExistedException,
+)
 from src.repositories.mappers.base_mapp import DataMapper, DBModelType, SchemaType
 from src.repositories.utils import check_safe_filters
 
@@ -73,7 +77,7 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
 
     async def get_all_with_any_parameters(
         self, *filter, **filter_by
-    ) -> list[BaseModel| Any]:
+    ) -> list[BaseModel | Any]:
         query = select(self.model).filter(*filter).filter_by(**filter_by)
         query_result = await self.session.execute(query)
         result = query_result.scalars().all()
@@ -97,9 +101,9 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
         try:
             result = await self.session.execute(stmt)
         except IntegrityError as ex:
-            if type(ex.orig.__cause__) == UniqueViolationError:
+            if isinstance(ex.orig.__cause__, UniqueViolationError):
                 raise AlreadyExistedException
-            elif type(ex.orig.__cause__) == ForeignKeyViolationError:
+            elif isinstance(ex.orig.__cause__, ForeignKeyViolationError):
                 raise ObjectNotFoundException
             else:
                 raise ex
@@ -110,7 +114,7 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
         try:
             await self.session.execute(stmt)
         except IntegrityError as ex:
-            if type(ex.orig.__cause__) == ForeignKeyViolationError:
+            if isinstance(ex.orig.__cause__, ForeignKeyViolationError):
                 raise ObjectNotFoundException
             else:
                 raise ex
@@ -128,7 +132,7 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
         try:
             new_result = await self.session.execute(stmt)
         except IntegrityError as ex:
-            if type(ex.orig.__cause__) == ForeignKeyViolationError:
+            if isinstance(ex.orig.__cause__, ForeignKeyViolationError):
                 raise ObjectNotFoundException
             else:
                 raise ex

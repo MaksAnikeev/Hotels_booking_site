@@ -4,7 +4,10 @@ from typing import Sequence
 from pydantic import BaseModel
 from sqlalchemy import select, and_, insert
 
-from src.exceptions import ObjectNotFoundException, AllRoomIsBookedException, NotAllNecessaryParamsException
+from src.exceptions import (
+    AllRoomIsBookedException,
+    NotAllNecessaryParamsException,
+)
 from src.models.booking import BookingORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import BookingDataMapper

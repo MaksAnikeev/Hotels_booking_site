@@ -25,8 +25,12 @@ class RoomFacilitiesRepository(BaseRepository):
         query = await self.session.execute(existing_room_facilities_ids_query)
         existing_room_facilities_ids: set[int] = set(query.scalars().all())
 
-        facilities_delete_ids: set[int] = existing_room_facilities_ids - set(facilities_ids)
-        facilities_add_ids: set[int] = set(facilities_ids) - existing_room_facilities_ids
+        facilities_delete_ids: set[int] = existing_room_facilities_ids - set(
+            facilities_ids
+        )
+        facilities_add_ids: set[int] = (
+            set(facilities_ids) - existing_room_facilities_ids
+        )
 
         if facilities_add_ids:
             room_facilities = [
@@ -36,7 +40,7 @@ class RoomFacilitiesRepository(BaseRepository):
             try:
                 await self.add_bulk(room_facilities)
             except IntegrityError as ex:
-                if type(ex.orig.__cause__) == ForeignKeyViolationError:
+                if isinstance(ex.orig.__cause__, ForeignKeyViolationError):
                     raise ObjectNotFoundException
                 else:
                     raise ex
@@ -44,6 +48,6 @@ class RoomFacilitiesRepository(BaseRepository):
         if facilities_delete_ids:
             await self.delete_bulk(
                 attribute="facility_id",
-                ids_for_delete=facilities_delete_ids, # type: ignore
+                ids_for_delete=facilities_delete_ids,  # type: ignore
                 room_id=room_id,
             )

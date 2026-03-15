@@ -4,7 +4,6 @@
 from datetime import date
 
 import pytest
-from fastapi import HTTPException
 
 from src.exceptions import ObjectNotFoundException
 from src.schemas.booking_shemas import BookingCreateSchemas, BookingChangeSchemas
@@ -32,14 +31,15 @@ async def test_booking_crud(db: DBManager):
     assert existing_booking
 
     data_for_edit = BookingChangeSchemas(
-        price=2000, date_to=date(year=2026, month=2, day=14) # type: ignore[attr-defined,operator]
+        price=2000,
+        date_to=date(year=2026, month=2, day=14),  # type: ignore[attr-defined,operator]
     )
     edit_booking = await db.booking.edit(data=data_for_edit, id=existing_booking.id)
     assert edit_booking.price == data_for_edit.price
     assert edit_booking.date_to == date(year=2026, month=2, day=14)
     assert (
         edit_booking.total_cost
-        == data_for_edit.price * (data_for_edit.date_to - booking_data.date_from).days     # type: ignore[attr-defined,operator]
+        == data_for_edit.price * (data_for_edit.date_to - booking_data.date_from).days  # type: ignore[attr-defined,operator]
     )
 
     await db.booking.delete(id=existing_booking.id)

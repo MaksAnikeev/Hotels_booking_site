@@ -4,7 +4,11 @@ from fastapi import APIRouter, Body, Query, HTTPException
 
 from src.api.dependencies import DBDep, UserIDDep
 from src.api.routers.utils import check_date_to_after_date_from
-from src.exceptions import ObjectNotFoundException, AllRoomIsBookedException, NotAllNecessaryParamsException
+from src.exceptions import (
+    ObjectNotFoundException,
+    AllRoomIsBookedException,
+    NotAllNecessaryParamsException,
+)
 from src.models.booking import BookingORM
 from src.schemas.booking_shemas import (
     BookingRequestSchemas,
@@ -78,12 +82,14 @@ async def add_booking(
     try:
         room: RoomGetSchemas = await db.rooms.get_one(id=booking_info.room_id)
     except ObjectNotFoundException:
-        raise HTTPException(404, 'Такой номер не найден')
+        raise HTTPException(404, "Такой номер не найден")
     _booking_info = BookingCreateSchemas(
         user_id=user_id, price=room.price, **booking_info.model_dump()
     )
     try:
-        booking: BookingGetSchemas= await db.booking.add_booking(_booking_info, hotel_id=room.hotel_id)
+        booking: BookingGetSchemas = await db.booking.add_booking(
+            _booking_info, hotel_id=room.hotel_id
+        )
     except AllRoomIsBookedException as ex:
         raise HTTPException(status_code=409, detail=ex.detail)
 

@@ -40,4 +40,6 @@ def send_email_service(emails: list, message: str = "", subject: str = ""):
 
 def check_date_to_after_date_from(date_from: date, date_to: date):
     if date_from >= date_to:
-        raise HTTPException(status_code=400, detail="Дата выезда должна быть позже даты заезда")
+        raise HTTPException(
+            status_code=400, detail="Дата выезда должна быть позже даты заезда"
+        )

@@ -4,8 +4,12 @@ from fastapi import HTTPException, APIRouter, Body, Query
 
 from src.api.dependencies import DBDep
 from src.api.routers.utils import check_date_to_after_date_from
-from src.exceptions import ObjectNotFoundException, TooLongParameterException, HotelNotFoundHTTPException, \
-    HotelOrRoomNotFoundHTTPException
+from src.exceptions import (
+    ObjectNotFoundException,
+    TooLongParameterException,
+    HotelNotFoundHTTPException,
+    HotelOrRoomNotFoundHTTPException,
+)
 from src.schemas.facilities_schemas import RoomFacilitiesCreateSchemas
 from src.schemas.rooms_schemas import (
     RoomCreateSchemas,
@@ -54,7 +58,9 @@ async def get_room(
     db: DBDep,
 ):
     try:
-        room = await db.rooms.get_one_or_none_with_relship(id=room_id, hotel_id=hotel_id)
+        room = await db.rooms.get_one_or_none_with_relship(
+            id=room_id, hotel_id=hotel_id
+        )
     except ObjectNotFoundException:
         raise HotelOrRoomNotFoundHTTPException
     return {"status": "success", "room": room, "detail": None}
@@ -70,9 +76,7 @@ async def add_room(
     try:
         room: RoomGetSchemas = await db.rooms.add(_room_info)
     except ObjectNotFoundException:
-        raise HTTPException(
-            status_code=404, detail="Отель с таким ид не найден"
-        )
+        raise HTTPException(status_code=404, detail="Отель с таким ид не найден")
     room_facilities = [
         RoomFacilitiesCreateSchemas(room_id=room.id, facility_id=f_id)
         for f_id in room_info.facilities_ids
@@ -80,9 +84,7 @@ async def add_room(
     try:
         await db.room_facilities.add_bulk(room_facilities)
     except ObjectNotFoundException:
-        raise HTTPException(
-            status_code=404, detail="Указаны не существующие удобства"
-        )
+        raise HTTPException(status_code=404, detail="Указаны не существующие удобства")
 
     await db.commit()
     return {
@@ -90,7 +92,6 @@ async def add_room(
         "description": f"Номер с названием {room.title} успешно добавлен в отель с ид {room.hotel_id}.",
         "room_info": room,
     }
-
 
 
 @router.put("/{hotel_id}/rooms/{room_id}", summary="Изменить данные по номеру")
@@ -116,7 +117,7 @@ async def change_room(
             facilities_ids=room_info.facilities_ids,
         )
     except ObjectNotFoundException:
-        raise HTTPException(404, 'Указаны не существующие удобства')
+        raise HTTPException(404, "Указаны не существующие удобства")
 
     await db.commit()
     return {
@@ -145,7 +146,6 @@ async def part_change_room(
     except TooLongParameterException as ex:
         raise HTTPException(400, detail=ex.detail)
 
-
     if "facilities_ids" in room_info_dict:
         try:
             await db.room_facilities.set_room_facilities(
@@ -153,7 +153,7 @@ async def part_change_room(
                 facilities_ids=room_info_dict["facilities_ids"],
             )
         except ObjectNotFoundException:
-            raise HTTPException(404, 'Указаны не существующие удобства')
+            raise HTTPException(404, "Указаны не существующие удобства")
 
     await db.commit()
     return {

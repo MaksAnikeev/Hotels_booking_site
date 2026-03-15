@@ -4,8 +4,14 @@ from fastapi import Query, APIRouter, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.routers.utils import check_date_to_after_date_from
-from src.exceptions import ObjectNotFoundException, AllRoomIsBookedException, TooLongParameterException, \
-    TooManyObjectsException, NotAllowedParameterException, AlreadyExistedException, HotelNotFoundHTTPException
+from src.exceptions import (
+    ObjectNotFoundException,
+    TooLongParameterException,
+    TooManyObjectsException,
+    NotAllowedParameterException,
+    AlreadyExistedException,
+    HotelNotFoundHTTPException,
+)
 
 from src.api.dependencies import PaginationDep, DBDep
 from src.schemas.hotels_schemas import (
@@ -87,7 +93,7 @@ async def add_hotel(
     try:
         hotel = await db.hotels.add(hotel_info)
     except AlreadyExistedException:
-        raise HTTPException(409, detail='Отель с такими параметрами уже существует')
+        raise HTTPException(409, detail="Отель с такими параметрами уже существует")
     await db.commit()
     return {
         "status": "OK",
@@ -115,7 +121,7 @@ async def change_hotel(
     except TooManyObjectsException as ex:
         raise HTTPException(422, detail=ex.detail)
     except NotAllowedParameterException as ex:
-            raise HTTPException(422, detail=ex.detail)
+        raise HTTPException(422, detail=ex.detail)
 
     await db.commit()
     return {
@@ -144,7 +150,7 @@ async def part_change_hotel(
     except TooManyObjectsException as ex:
         raise HTTPException(422, detail=ex.detail)
     except NotAllowedParameterException as ex:
-            raise HTTPException(422, detail=ex.detail)
+        raise HTTPException(422, detail=ex.detail)
 
     await db.commit()
     return {

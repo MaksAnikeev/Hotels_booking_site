@@ -26,4 +26,4 @@ class RoomsFacilitiesORM(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     facility_id: Mapped[int] = mapped_column(ForeignKey("facilities.id"))
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", ondelete='CASCADE'))
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", ondelete="CASCADE"))
