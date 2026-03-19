@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from typing import Union
 
@@ -13,6 +14,7 @@ from src.utils.db_manager import DBManager
 
 @celery_instance.task
 def resize_and_save_image(image_path: Union[str, Path]) -> None:
+    logging.debug(f"Запуск таски resize_and_save_image в celery по пути:{image_path=}")
     output_dir = "src/static/images"
     # Размеры по большей стороне
     sizes = [i for i in range(10000, 2000, 100)]
@@ -51,7 +53,7 @@ def resize_and_save_image(image_path: Union[str, Path]) -> None:
             # Сохраняем
             resized_img.save(output_path, quality=85, optimize=True)
 
-        print(
+        logging.info(
             f"Изображение сохранено в следующих размерах: {sizes} в папке {output_dir}"
         )
 
@@ -59,7 +61,7 @@ def resize_and_save_image(image_path: Union[str, Path]) -> None:
 async def session_get_booking_chek_in_now():
     async with DBManager(session_factory=async_session_factory_null_pull) as db:
         bookings = await db.booking.get_booking_chek_in_now()
-        print(f"{bookings=}")
+        logging.debug(f"{bookings=}")
 
 
 @celery_instance.task(name="booking_chek_in_today")

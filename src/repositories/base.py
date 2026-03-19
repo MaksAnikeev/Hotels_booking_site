@@ -1,3 +1,4 @@
+import logging
 from typing import List, Sequence, Any, Generic, Type
 
 import sqlalchemy
@@ -18,9 +19,9 @@ from src.repositories.mappers.base_mapp import DataMapper, DBModelType, SchemaTy
 from src.repositories.utils import check_safe_filters
 
 
-class BaseRepository(Generic[DBModelType, SchemaType]):
-    model: Type[DBModelType]
-    mapper: Type[DataMapper[DBModelType, SchemaType]]
+class BaseRepository:
+    model: None
+    mapper: None
     session: AsyncSession
 
     def __init__(self, session: AsyncSession):
@@ -102,11 +103,23 @@ class BaseRepository(Generic[DBModelType, SchemaType]):
             result = await self.session.execute(stmt)
         except IntegrityError as ex:
             if isinstance(ex.orig.__cause__, UniqueViolationError):
+                logging.error(
+                    f"Ошибка при попытки создать объект с уже существующими уникальными параметрами /"
+                    f"Входные данные {data.model_dump()}"
+                )
                 raise AlreadyExistedException
             elif isinstance(ex.orig.__cause__, ForeignKeyViolationError):
+                logging.error(
+                    f"Ошибка при попытки создать объект с несуществующим значением ForeignKey /"
+                    f"Входные данные {data.model_dump()}"
+                )
                 raise ObjectNotFoundException
             else:
+                logging.error(
+                    f"Неизвестная ошибка: {ex}. Входные данные {data.model_dump()}"
+                )
                 raise ex
+        logging.info(f"Объект успешно создан. Данные {data.model_dump()}")
         return self.mapper.map_to_domain_entity(result.scalars().one())
 
     async def add_bulk(self, data: Sequence[BaseModel]):

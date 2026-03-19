@@ -60,10 +60,7 @@ async def test_auth_flow(
             == f"Новый пользователь {new_user_info['first_name']} успешно добавлен"
         )
     elif response_reg.status_code == 409:
-        assert (
-            resp["detail"]
-            == f"Пользователь с таким email {new_user_info['email']} уже существует"
-        )
+        assert resp["detail"] == "Пользователь с таким email уже существует"
         return
 
     # login
@@ -78,7 +75,7 @@ async def test_auth_flow(
         assert resp["description"] == "JWT token успешно создан"
         assert ac.cookies["access_token"] == resp["access_token"]
     elif response_log.status_code == 401:
-        assert resp["detail"] == "Неверно указанный пароль."
+        assert resp["detail"] == "Неверно указан пароль"
         return
     else:
         return
@@ -97,4 +94,4 @@ async def test_auth_flow(
 
     # Unauthorized
     response_me = await ac.get("/user/me")
-    assert response_me.status_code == 404
+    assert response_me.status_code == 401

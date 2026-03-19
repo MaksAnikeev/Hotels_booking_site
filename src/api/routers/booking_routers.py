@@ -1,22 +1,22 @@
 from datetime import date
 
-from fastapi import APIRouter, Body, Query, HTTPException
+from fastapi import APIRouter, Body, Query
 
 from src.api.dependencies import DBDep, UserIDDep
-from src.api.routers.utils import check_date_to_after_date_from
 from src.exceptions import (
-    ObjectNotFoundException,
     AllRoomIsBookedException,
     NotAllNecessaryParamsException,
+    RoomNotFoundHTTPException,
+    RoomNotFoundException,
+    NotBookingDateHTTPException,
+    AllRoomIsBookedExceptionHTTPException,
 )
-from src.models.booking import BookingORM
+
 from src.schemas.booking_shemas import (
     BookingRequestSchemas,
     example_add_booking,
-    BookingCreateSchemas,
-    BookingGetSchemas,
 )
-from src.schemas.rooms_schemas import RoomGetSchemas
+from src.services.booking_service import BookingService
 
 router = APIRouter(prefix="/bookings", tags=["Бронирование"])
 
@@ -29,12 +29,9 @@ async def get_my_booking(
         date(2026, 1, 31), description="Дата заезда, с которой показать бронирования"
     ),
 ):
-    if date_from:
-        bookings = await db.booking.get_all_with_any_parameters(
-            BookingORM.date_from >= date_from, user_id=user_id
-        )
-    else:
-        bookings = await db.booking.get_all_with_parameters(user_id=user_id)
+    bookings = await BookingService(db).get_all_with_any_parameters(
+        user_id=user_id, date_from=date_from
+    )
     return {"status": "success", "data": bookings, "detail": None}
 
 
@@ -45,22 +42,14 @@ async def get_room_booking(
     date_from: date = Query(date(2026, 1, 31), description="Дата заезда"),
     date_to: date = Query(date(2026, 2, 2), description="Дата выезда"),
 ):
-    check_date_to_after_date_from(date_from, date_to)
-
     try:
-        booking = await db.booking.get_booking_to_date(
-            room_id=room_id, date_from=date_from, date_to=date_to
-        )
+        booking, quantity_booked_rooms, quantity_free_rooms = await BookingService(
+            db
+        ).get_booking_to_date(room_id=room_id, date_from=date_from, date_to=date_to)
+    except RoomNotFoundException:
+        raise RoomNotFoundHTTPException
     except NotAllNecessaryParamsException:
-        raise HTTPException(
-            status_code=400,
-            detail="не указана полностью временной диапазон date_from date_to",
-        )
-
-    quantity_booked_rooms = len(booking)
-    room: RoomGetSchemas = await db.rooms.get_one(id=room_id)
-    quantity_rooms = room.quantity
-    quantity_free_rooms = quantity_rooms - quantity_booked_rooms
+        raise NotBookingDateHTTPException
     return {
         "status": "success",
         "data": booking,
@@ -77,21 +66,14 @@ async def add_booking(
     db: DBDep,
     booking_info: BookingRequestSchemas = Body(openapi_examples=example_add_booking),
 ):
-    check_date_to_after_date_from(booking_info.date_from, booking_info.date_to)
-
     try:
-        room: RoomGetSchemas = await db.rooms.get_one(id=booking_info.room_id)
-    except ObjectNotFoundException:
-        raise HTTPException(404, "Такой номер не найден")
-    _booking_info = BookingCreateSchemas(
-        user_id=user_id, price=room.price, **booking_info.model_dump()
-    )
-    try:
-        booking: BookingGetSchemas = await db.booking.add_booking(
-            _booking_info, hotel_id=room.hotel_id
+        booking, room = await BookingService(db).add_booking(
+            user_id=user_id, booking_info=booking_info
         )
-    except AllRoomIsBookedException as ex:
-        raise HTTPException(status_code=409, detail=ex.detail)
+    except RoomNotFoundException:
+        raise RoomNotFoundHTTPException
+    except AllRoomIsBookedException:
+        raise AllRoomIsBookedExceptionHTTPException
 
     await db.commit()
     return {

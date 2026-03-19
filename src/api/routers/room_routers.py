@@ -3,30 +3,35 @@ from datetime import date
 from fastapi import HTTPException, APIRouter, Body, Query
 
 from src.api.dependencies import DBDep
-from src.api.routers.utils import check_date_to_after_date_from
 from src.exceptions import (
-    ObjectNotFoundException,
     TooLongParameterException,
     HotelNotFoundHTTPException,
-    HotelOrRoomNotFoundHTTPException,
+    HotelNotFoundException,
+    RoomNotFoundException,
+    RoomNotFoundHTTPException,
+    FacilitiesNotFoundException,
+    FacilitiesNotFoundHTTPException,
+    TooLongParameterHTTPException,
 )
-from src.schemas.facilities_schemas import RoomFacilitiesCreateSchemas
 from src.schemas.rooms_schemas import (
-    RoomCreateSchemas,
     example_add_room,
-    RoomChangeSchemas,
     example_change_room,
     RoomRequestSchemas,
     RoomChangeRequestSchemas,
     RoomGetSchemas,
 )
+from src.services.room_service import RoomService
 
 router = APIRouter(prefix="/hotels", tags=["Номера"])
 
 
 @router.get("/{hotel_id}/rooms", summary="Получить номера в отеле")
 async def get_rooms(hotel_id: int, db: DBDep):
-    rooms = await db.rooms.get_all_with_parameters(hotel_id=hotel_id)
+    try:
+        rooms = await RoomService(db).get_all_with_parameters(hotel_id=hotel_id)
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
+
     return {"status": "success", "rooms": rooms, "details": None}
 
 
@@ -40,13 +45,11 @@ async def get_free_rooms(
     date_from: date = Query(date(2026, 1, 25), description="Дата заезда"),
     date_to: date = Query(date(2026, 1, 30), description="Дата выезда"),
 ):
-    check_date_to_after_date_from(date_from, date_to)
-
     try:
-        rooms = await db.rooms.get_rooms_to_date(
+        rooms = await RoomService(db).get_rooms_to_date(
             date_from=date_from, date_to=date_to, hotel_id=hotel_id
         )
-    except ObjectNotFoundException:
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
     return {"status": "success", "rooms": rooms, "details": None}
 
@@ -58,11 +61,15 @@ async def get_room(
     db: DBDep,
 ):
     try:
-        room = await db.rooms.get_one_or_none_with_relship(
-            id=room_id, hotel_id=hotel_id
+        room = await RoomService(db).get_one_or_none_with_relship(
+            hotel_id=hotel_id,
+            room_id=room_id,
         )
-    except ObjectNotFoundException:
-        raise HotelOrRoomNotFoundHTTPException
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
+    except RoomNotFoundException:
+        raise RoomNotFoundHTTPException
+
     return {"status": "success", "room": room, "detail": None}
 
 
@@ -72,19 +79,14 @@ async def add_room(
     db: DBDep,
     room_info: RoomRequestSchemas = Body(openapi_examples=example_add_room),
 ):
-    _room_info = RoomCreateSchemas(hotel_id=hotel_id, **room_info.model_dump())
     try:
-        room: RoomGetSchemas = await db.rooms.add(_room_info)
-    except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Отель с таким ид не найден")
-    room_facilities = [
-        RoomFacilitiesCreateSchemas(room_id=room.id, facility_id=f_id)
-        for f_id in room_info.facilities_ids
-    ]
-    try:
-        await db.room_facilities.add_bulk(room_facilities)
-    except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Указаны не существующие удобства")
+        room: RoomGetSchemas = await RoomService(db).add(
+            hotel_id=hotel_id, room_info=room_info
+        )
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
+    except FacilitiesNotFoundException:
+        raise FacilitiesNotFoundHTTPException
 
     await db.commit()
     return {
@@ -101,23 +103,16 @@ async def change_room(
     db: DBDep,
     room_info: RoomRequestSchemas = Body(openapi_examples=example_add_room),
 ) -> dict:
-    _room_info = RoomCreateSchemas(hotel_id=hotel_id, **room_info.model_dump())
     try:
-        room = await db.rooms.edit(
-            data=_room_info,
-            id=room_id,
+        room = await RoomService(db).edit(
+            hotel_id=hotel_id, room_id=room_id, room_info=room_info
         )
-    except ObjectNotFoundException:
-        raise HotelOrRoomNotFoundHTTPException
-    except TooLongParameterException as ex:
-        raise HTTPException(400, detail=ex.detail)
-    try:
-        await db.room_facilities.set_room_facilities(
-            room_id=room.id,
-            facilities_ids=room_info.facilities_ids,
-        )
-    except ObjectNotFoundException:
-        raise HTTPException(404, "Указаны не существующие удобства")
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
+    except RoomNotFoundException:
+        raise RoomNotFoundHTTPException
+    except FacilitiesNotFoundException:
+        raise FacilitiesNotFoundHTTPException
 
     await db.commit()
     return {
@@ -136,24 +131,18 @@ async def part_change_room(
     db: DBDep,
     room_info: RoomChangeRequestSchemas = Body(openapi_examples=example_change_room),
 ) -> dict:
-    room_info_dict = room_info.model_dump(exclude_unset=True)
-    _room_info = RoomChangeSchemas(hotel_id=hotel_id, **room_info_dict)
+
     try:
-        room = await db.rooms.edit(data=_room_info, id=room_id, hotel_id=hotel_id)
+        room = await RoomService(db).part_edit(
+            hotel_id=hotel_id, room_id=room_id, room_info=room_info
+        )
 
-    except ObjectNotFoundException:
-        raise HotelOrRoomNotFoundHTTPException
-    except TooLongParameterException as ex:
-        raise HTTPException(400, detail=ex.detail)
-
-    if "facilities_ids" in room_info_dict:
-        try:
-            await db.room_facilities.set_room_facilities(
-                room_id=room.id,
-                facilities_ids=room_info_dict["facilities_ids"],
-            )
-        except ObjectNotFoundException:
-            raise HTTPException(404, "Указаны не существующие удобства")
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
+    except RoomNotFoundException:
+        raise RoomNotFoundHTTPException
+    except FacilitiesNotFoundException:
+        raise FacilitiesNotFoundHTTPException
 
     await db.commit()
     return {
@@ -170,11 +159,16 @@ async def del_room(
     db: DBDep,
 ):
     try:
-        room = await db.rooms.delete(id=room_id, hotel_id=hotel_id)
-    except ObjectNotFoundException:
-        raise HotelOrRoomNotFoundHTTPException
-    except TooLongParameterException as ex:
-        raise HTTPException(400, detail=ex.detail)
+        room = await RoomService(db).delete(hotel_id=hotel_id, room_id=room_id)
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
+    except RoomNotFoundException:
+        raise RoomNotFoundHTTPException
+    except FacilitiesNotFoundException:
+        raise FacilitiesNotFoundHTTPException
+    except TooLongParameterException:
+        raise TooLongParameterHTTPException
+
     await db.commit()
     return {
         "status": "OK",

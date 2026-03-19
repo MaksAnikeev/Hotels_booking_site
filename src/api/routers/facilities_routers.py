@@ -6,6 +6,7 @@ from src.schemas.facilities_schemas import (
     FacilitiesCreateSchemas,
     example_add_facilities,
 )
+from src.services.facilities_service import FacilitiesService
 
 router = APIRouter(prefix="/facilities", tags=["Удобства"])
 
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/facilities", tags=["Удобства"])
 async def get_facilities(
     db: DBDep,
 ):
-    facilities = await db.facilities.get_all()
+    facilities = await FacilitiesService(db).get_all()
     return {"status": "success", "data": facilities, "detail": None}
 
 
@@ -26,10 +27,10 @@ async def add_facilities(
         openapi_examples=example_add_facilities
     ),
 ):
-    facilities = await db.facilities.add(facilities_info)
+    facility = await FacilitiesService(db).add(facilities_info)
     await db.commit()
     return {
         "status": "OK",
-        "description": f"Удобство с названием {facilities.title} успешно добавлено.",
-        "room_info": facilities,
+        "description": f"Удобство с названием {facility.title} успешно добавлено.",
+        "facility_info": facility,
     }

@@ -1,4 +1,5 @@
 import redis.asyncio as redis
+import logging
 
 
 class RedisConnector:
@@ -10,11 +11,16 @@ class RedisConnector:
         self.password = password
 
     async def connect(self):
+        logging.info(f"Начало подключение к Redis host: {self.host}, port: {self.port}")
         params = {"host": self.host, "port": self.port, "decode_responses": True}
         if self.password:
             params["password"] = self.password
+            logging.info("Подключение к Redis с паролем")
 
         self._redis = await redis.Redis(**params)
+        logging.info(
+            f"Подключение к Redis успешно на host: {self.host}, port: {self.port}"
+        )
 
     async def set(self, key: str, value: str, expire: int = None):
         if expire:
@@ -31,3 +37,4 @@ class RedisConnector:
     async def close(self):
         if self._redis:
             await self._redis.close()
+            logging.warning(f"Подключение к Redis закрыто")

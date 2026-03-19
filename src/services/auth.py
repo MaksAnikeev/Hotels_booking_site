@@ -5,9 +5,20 @@ from pwdlib import PasswordHash
 import jwt
 
 from src.config import settings
+from src.exceptions import (
+    IncorrectPasswordException,
+    WrongAccessToken,
+    TimeoutAccessToken,
+)
+from src.schemas.users_schemas import (
+    UserRequestSchemas,
+    UserRoleEnum,
+    UserCreateSchemas,
+)
+from src.services.base_service import BaseService
 
 
-class AuthService:
+class AuthService(BaseService):
     password_hash = PasswordHash.recommended()
 
     def create_access_token(self, data: dict):
@@ -34,11 +45,28 @@ class AuthService:
             )
             return data
         except jwt.ExpiredSignatureError:
-            raise HTTPException(
-                status_code=401,
-                detail="Время действия токена истекло. Необходимо залогиниться",
-            )
+            raise TimeoutAccessToken
         except jwt.exceptions.DecodeError:
-            raise HTTPException(
-                status_code=401, detail="Некорректный токен. Необходимо залогиниться"
-            )
+            raise WrongAccessToken
+
+    async def add_user(self, user_info: UserRequestSchemas):
+        hashed_password = self.get_password_hash(user_info.password)
+        role = UserRoleEnum.user
+        new_user_info = UserCreateSchemas(
+            email=user_info.email,
+            first_name=user_info.first_name,
+            last_name=user_info.last_name,
+            hashed_password=hashed_password,
+            role=role,
+        )
+        new_user = await self.db.users.add(new_user_info)
+        return new_user
+
+    async def get_user_with_hashed_password(self, user_info: UserRequestSchemas):
+        user = await self.db.users.get_user_with_hashed_password(email=user_info.email)
+
+        if not self.verify_password(user_info.password, user.hashed_password):
+            raise IncorrectPasswordException
+        access_token = self.create_access_token({"user_id": user.id})
+
+        return access_token

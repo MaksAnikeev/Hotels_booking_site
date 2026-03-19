@@ -3,7 +3,6 @@ from datetime import date
 from fastapi import Query, APIRouter, Body, HTTPException
 from fastapi_cache.decorator import cache
 
-from src.api.routers.utils import check_date_to_after_date_from
 from src.exceptions import (
     ObjectNotFoundException,
     TooLongParameterException,
@@ -11,6 +10,10 @@ from src.exceptions import (
     NotAllowedParameterException,
     AlreadyExistedException,
     HotelNotFoundHTTPException,
+    HotelAlreadyExistedHTTPException,
+    TooLongParameterHTTPException,
+    TooManyObjectsHTTPException,
+    NotAllowedParameterHTTPException,
 )
 
 from src.api.dependencies import PaginationDep, DBDep
@@ -20,6 +23,7 @@ from src.schemas.hotels_schemas import (
     example_add_hotel,
     example_change_hotel,
 )
+from src.services.hotel_service import HotelService
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -32,11 +36,10 @@ async def get_hotels(
     title: str | None = Query(None, description="название отеля"),
     location: str | None = Query(None, description="адрес отеля"),
 ):
-    hotels = await db.hotels.get_all(
+    hotels = await HotelService(db).get_all(
+        pagination=pagination,
         title=title,
         location=location,
-        limit=pagination.per_page,
-        offset=(pagination.page - 1) * pagination.per_page,
     )
 
     return {"status": "success", "data": hotels, "details": None}
@@ -53,13 +56,11 @@ async def get_free_hotels(
     date_from: date = Query(date(2026, 1, 25), description="Дата заезда"),
     date_to: date = Query(date(2026, 1, 30), description="Дата выезда"),
 ):
-    check_date_to_after_date_from(date_from, date_to)
 
-    hotels = await db.hotels.get_all_to_date(
+    hotels = await HotelService(db).get_all_to_date(
+        pagination=pagination,
         title=title,
         location=location,
-        limit=pagination.per_page,
-        offset=(pagination.page - 1) * pagination.per_page,
         date_from=date_from,
         date_to=date_to,
     )
@@ -73,14 +74,14 @@ async def get_hotel(
     db: DBDep,
 ):
     try:
-        hotel = await db.hotels.get_one(id=hotel_id)
+        hotel = await HotelService(db).get_one(hotel_id=hotel_id)
 
     except ObjectNotFoundException:
         raise HotelNotFoundHTTPException
-    except TooLongParameterException as ex:
-        raise HTTPException(400, detail=ex.detail)
-    except TooManyObjectsException as ex:
-        raise HTTPException(422, detail=ex.detail)
+    except TooLongParameterException:
+        raise TooLongParameterHTTPException
+    except TooManyObjectsException:
+        raise TooManyObjectsHTTPException
 
     return {"status": "success", "data": hotel, "detail": None}
 
@@ -91,9 +92,9 @@ async def add_hotel(
     hotel_info: HotelCreateSchemas = Body(openapi_examples=example_add_hotel),
 ):
     try:
-        hotel = await db.hotels.add(hotel_info)
+        hotel = await HotelService(db).add(hotel_info)
     except AlreadyExistedException:
-        raise HTTPException(409, detail="Отель с такими параметрами уже существует")
+        raise HotelAlreadyExistedHTTPException
     await db.commit()
     return {
         "status": "OK",
@@ -110,18 +111,18 @@ async def change_hotel(
 ) -> dict:
 
     try:
-        hotel = await db.hotels.edit(
-            data=hotel_info,
-            id=hotel_id,
+        hotel = await HotelService(db).edit(
+            hotel_id=hotel_id,
+            hotel_info=hotel_info,
         )
     except ObjectNotFoundException:
         raise HotelNotFoundHTTPException
-    except TooLongParameterException as ex:
-        raise HTTPException(400, detail=ex.detail)
-    except TooManyObjectsException as ex:
-        raise HTTPException(422, detail=ex.detail)
-    except NotAllowedParameterException as ex:
-        raise HTTPException(422, detail=ex.detail)
+    except TooLongParameterException:
+        raise TooLongParameterHTTPException
+    except TooManyObjectsException:
+        raise TooManyObjectsHTTPException
+    except NotAllowedParameterException:
+        raise NotAllowedParameterHTTPException
 
     await db.commit()
     return {
@@ -138,19 +139,18 @@ async def part_change_hotel(
     hotel_info: HotelChangeSchemas = Body(openapi_examples=example_change_hotel),
 ) -> dict:
     try:
-        hotel = await db.hotels.edit(
-            data=hotel_info,
-            is_patch=True,
-            id=hotel_id,
+        hotel = await HotelService(db).part_edit(
+            hotel_id=hotel_id,
+            hotel_info=hotel_info,
         )
     except ObjectNotFoundException:
         raise HotelNotFoundHTTPException
-    except TooLongParameterException as ex:
-        raise HTTPException(400, detail=ex.detail)
-    except TooManyObjectsException as ex:
-        raise HTTPException(422, detail=ex.detail)
-    except NotAllowedParameterException as ex:
-        raise HTTPException(422, detail=ex.detail)
+    except TooLongParameterException:
+        raise TooLongParameterHTTPException
+    except TooManyObjectsException:
+        raise TooManyObjectsHTTPException
+    except NotAllowedParameterException:
+        raise NotAllowedParameterHTTPException
 
     await db.commit()
     return {
@@ -166,15 +166,15 @@ async def del_hotel(
     db: DBDep,
 ):
     try:
-        hotel = await db.hotels.delete(
-            id=hotel_id,
+        hotel = await HotelService(db).delete(
+            hotel_id=hotel_id,
         )
     except ObjectNotFoundException:
         raise HotelNotFoundHTTPException
-    except TooLongParameterException as ex:
-        raise HTTPException(400, detail=ex.detail)
-    except TooManyObjectsException as ex:
-        raise HTTPException(422, detail=ex.detail)
+    except TooLongParameterException:
+        raise TooLongParameterHTTPException
+    except TooManyObjectsException:
+        raise TooManyObjectsHTTPException
 
     await db.commit()
     return {
