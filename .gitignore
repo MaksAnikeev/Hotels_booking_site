@@ -156,7 +156,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 media
-static
+src/static/*
+!src/static/**/.gitkeep
 async_load_testing
 logs
 *.json
