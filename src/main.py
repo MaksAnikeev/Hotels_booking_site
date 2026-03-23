@@ -11,7 +11,6 @@ from sqlalchemy import text
 from src.api.routers.routers import init_routers
 from src.database import async_session_factory_null_pull
 from src.setup import redis_connector
-from src.utils.db_manager import DBManager
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -42,4 +41,4 @@ init_routers(app_=app)
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)
+    uvicorn.run("src.main:app", host='0.0.0.0', reload=True)

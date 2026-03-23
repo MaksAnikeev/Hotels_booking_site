@@ -58,10 +58,11 @@ class RoomService(BaseService):
             RoomFacilitiesCreateSchemas(room_id=room.id, facility_id=f_id)
             for f_id in room_info.facilities_ids
         ]
-        try:
-            await self.db.room_facilities.add_bulk(room_facilities)
-        except ObjectNotFoundException:
-            raise FacilitiesNotFoundException
+        if "facilities_ids" in room_info:
+            try:
+                await self.db.room_facilities.add_bulk(room_facilities)
+            except ObjectNotFoundException:
+                raise FacilitiesNotFoundException
         return room
 
     async def edit(

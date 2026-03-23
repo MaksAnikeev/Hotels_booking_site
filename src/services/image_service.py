@@ -7,7 +7,7 @@ from src.tasks.tasks import resize_and_save_image
 
 
 class ImageService(BaseService):
-    async def resize_image(
+    def resize_image(
         self, file: UploadFile, background_tasks: BackgroundTasks
     ) -> None:
 

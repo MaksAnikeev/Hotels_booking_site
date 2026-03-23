@@ -1,4 +1,5 @@
 import redis.asyncio as redis
+from redis import exceptions as redis_exc
 import logging
 
 
@@ -18,6 +19,12 @@ class RedisConnector:
             logging.info("Подключение к Redis с паролем")
 
         self._redis = await redis.Redis(**params)
+        try:
+            await self._redis.ping()  # или .info() или .client_list()
+            logging.info("Redis ping OK → подключение реально работает")
+        except redis_exc.ConnectionError as e:
+            logging.critical("Redis НЕ доступен при старте!")
+            raise RuntimeError("Redis недоступен")
         logging.info(
             f"Подключение к Redis успешно на host: {self.host}, port: {self.port}"
         )
