@@ -1,5 +1,5 @@
 # Установка
-1. На сервере установить гит
+1. На сервере установить git
 ~~~pycon
 sudo apt update
 apt install git
