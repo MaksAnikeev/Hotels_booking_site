@@ -161,3 +161,4 @@ src/static/*
 async_load_testing
 logs
 *.json
+"docker images/"
