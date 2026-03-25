@@ -1,0 +1,58 @@
+services:
+  migrations:
+    build: .
+    command: >
+      sh -c "
+        echo '🔄 Запуск миграций...' &&
+        alembic upgrade head &&
+        echo '✅ Миграции применены'
+      "
+    env_file:
+      - .env
+    restart: "no"
+    networks:
+      - bookingNetwork
+
+  booking_back_service:
+    container_name: "booking_back"
+    build:
+      context: .
+    ports:
+      - "7777:8000"
+    networks:
+      - bookingNetwork
+    env_file:
+      - .env
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+  celery_worker_service:
+    container_name: "booking_celery_worker"
+    build:
+      context: .
+    networks:
+      - bookingNetwork
+    command: "celery --app=src.tasks.celery_app:celery_instance worker -l INFO"
+    env_file:
+      - .env
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+  celery_beat_service:
+    container_name: "booking_celery_beat"
+    build:
+      context: .
+    networks:
+      - bookingNetwork
+    command: "celery --app=src.tasks.celery_app:celery_instance beat -l INFO"
+    env_file:
+      - .env
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+networks:
+  bookingNetwork:
+    external: True
