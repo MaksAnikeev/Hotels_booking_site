@@ -45,7 +45,7 @@ services:
     networks:
       - bookingNetwork
     volumes:
-      - ./hosts/back_nginx.conf:/etc/nginx/conf.d/default.conf # это настройка nginx только для маршрутизации, меняет только опциональный файл nginx
+      - ./hosts/prod_nginx.conf:/etc/nginx/conf.d/default.conf # это настройка nginx с ssl сертификатами для маршрутизации, меняет только опциональный файл nginx
 #      - ./hosts/full_back_nginx.conf:/etc/nginx/nginx.conf:ro # это полная настройка nginx с включением лимита на подключение, меняет весь файл настройки
       - /etc/letsencrypt:/etc/letsencrypt:ro # для ssl сертификатов
       - /var/lib/letsencrypt:/var/lib/letsencrypt # для ssl сертификатов
@@ -57,7 +57,7 @@ services:
     command: >
       sh -c "
         echo '🔄 Запуск миграций...' &&
-        sleep 10 &&
+        sleep 5 &&
         alembic upgrade head &&
         echo '✅ Миграции применены'
       "
@@ -74,8 +74,6 @@ services:
     container_name: "booking_back"
     build:
       context: .
-#    ports:
-#      - "7777:8000"
     networks:
       - bookingNetwork
     env_file:
