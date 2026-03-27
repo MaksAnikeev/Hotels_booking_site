@@ -38,7 +38,7 @@ async def get_users(
 
 
 @router.get(
-    "/me", summary="демонстрация данных по текущему аутентифицированному пользователю"
+    "/me", summary="🧑‍💻 Мой профиль"
 )
 async def who_are_me(
     user_id: UserIDDep,
