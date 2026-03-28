@@ -1,4 +1,28 @@
 from fastapi import HTTPException
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+
+
+def init_exception_handlers(app_: FastAPI):
+    @app_.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        for error in exc.errors():
+            if error['type'] == 'extra_forbidden':
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "status": "error",
+                        "code": 400,
+                        "message": f"Недопустимые поля: {', '.join(error.get('loc', []))}"
+                    }
+                )
+
+        # Остальные ошибки валидации
+        return JSONResponse(
+            status_code=422,
+            content={"status": "error", "details": exc.errors()}
+        )
 
 
 class CustomException(Exception):
@@ -60,6 +84,10 @@ class WrongAccessToken(CustomException):
 
 class TimeoutAccessToken(CustomException):
     detail = "Время действия токена истекло."
+
+
+class EmptyAttributesException(CustomException):
+    detail = "Переданный атрибут не может быть пустым или все переданный атрибуты пустые"
 
 
 class CustomHTTPException(HTTPException):
@@ -159,3 +187,25 @@ class NotAllowedParameterHTTPException(CustomHTTPException):
         "У данного объекта нет параметров/атрибутов, которые вы хотите изменить."
         " Уточните название изменяемых атрибутов"
     )
+
+class EmptyPasswordHTTPException(CustomHTTPException):
+    status_code = 400
+    detail = (
+        "Пароль не может быть пустым"
+    )
+
+class NotAnyAttributeHTTPException(CustomHTTPException):
+    status_code = 400
+    detail = (
+        "Хотя бы одно поле должно быть непустым"
+    )
+
+class EmptyRequestBodyHTTPException(CustomHTTPException):
+    status_code = 400
+    detail = (
+        "Не передано ни одного параметра"
+    )
+
+class FacilitiesAlreadyExistedHTTPException(CustomHTTPException):
+    status_code = 409
+    detail = "Удобство с таким названием уже существует"

@@ -28,7 +28,7 @@ from src.services.hotel_service import HotelService
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
 
-@router.get("/", summary="Получить данные по всем существующим отелям")
+@router.get("", summary="Получить данные по всем существующим отелям")
 @cache(20)
 async def get_hotels(
     pagination: PaginationDep,
@@ -42,7 +42,7 @@ async def get_hotels(
         location=location,
     )
 
-    return {"status": "success", "data": hotels, "details": None}
+    return hotels
 
 
 @router.get(
@@ -65,7 +65,7 @@ async def get_free_hotels(
         date_to=date_to,
     )
 
-    return {"status": "success", "data": hotels, "details": None}
+    return hotels
 
 
 @router.get("/{hotel_id}", summary="Получить данные по одному отелю")
@@ -83,7 +83,7 @@ async def get_hotel(
     except TooManyObjectsException:
         raise TooManyObjectsHTTPException
 
-    return {"status": "success", "data": hotel, "detail": None}
+    return hotel
 
 
 @router.post("/hotel", summary="Добавить отель в БД")

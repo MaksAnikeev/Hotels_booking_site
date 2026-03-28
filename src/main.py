@@ -10,6 +10,7 @@ from sqlalchemy import text
 
 from src.api.routers.routers import init_routers
 from src.database import async_session_factory_null_pull
+from src.exceptions import init_exception_handlers
 from src.setup import redis_connector
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 init_routers(app_=app)
+init_exception_handlers(app_=app)
 
 
 if __name__ == "__main__":

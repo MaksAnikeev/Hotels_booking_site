@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field
 
+from src.schemas.base_schema import ChangeBaseSchema
 from src.schemas.facilities_schemas import FacilitiesGetSchemas
 
 
-class RoomRequestSchemas(BaseModel):
+class RoomRequestSchemas(ChangeBaseSchema):
     title: str = Field(..., description="Короткое название номера")
     description: str | None = Field(None, description="Описание номера")
     price: int = Field(..., ge=1, description="Стоимость номера за сутки")
@@ -83,7 +84,7 @@ class RoomChangeSchemas(BaseModel):
     )
 
 
-class RoomChangeRequestSchemas(BaseModel):
+class RoomChangeRequestSchemas(ChangeBaseSchema):
     title: str | None = Field(None, description="Новое короткое название номера")
     description: str | None = Field(None, description="Описание номера")
     price: int | None = Field(None, ge=1, description="Стоимость номера за сутки")

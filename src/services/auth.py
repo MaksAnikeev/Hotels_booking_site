@@ -8,7 +8,7 @@ from src.config import settings
 from src.exceptions import (
     IncorrectPasswordException,
     WrongAccessToken,
-    TimeoutAccessToken,
+    TimeoutAccessToken, EmptyAttributesException,
 )
 from src.schemas.users_schemas import (
     UserRequestSchemas,
@@ -50,6 +50,8 @@ class AuthService(BaseService):
             raise WrongAccessToken
 
     async def add_user(self, user_info: UserRequestSchemas):
+        if not user_info.password:
+            raise EmptyAttributesException
         hashed_password = self.get_password_hash(user_info.password)
         role = UserRoleEnum.user
         new_user_info = UserCreateSchemas(

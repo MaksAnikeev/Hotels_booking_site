@@ -3,8 +3,10 @@ from datetime import datetime
 from pydantic import BaseModel, Field, EmailStr
 from sqlalchemy import Enum
 
+from src.schemas.base_schema import ChangeBaseSchema
 
-class UserRequestSchemas(BaseModel):
+
+class UserRequestSchemas(ChangeBaseSchema):
     email: EmailStr = Field(..., description="Адрес эл.почты")
     first_name: str | None = Field(None, description="Имя пользователя")
     last_name: str | None = Field(None, description="Фамилия пользователя")

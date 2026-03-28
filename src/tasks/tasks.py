@@ -16,27 +16,22 @@ from src.utils.db_manager import DBManager
 @celery_instance.task
 def resize_and_save_image(image_path: Union[str, Path]) -> None:
     logging.debug(f"Запуск таски resize_and_save_image в celery по пути:{image_path=}")
-    output_dir = "src/static/images"
-    # Размеры по большей стороне
-    sizes = [i for i in range(1000, 2000, 300)]
-
     # Преобразуем пути в Path-объекты для удобства
     image_path = Path(image_path)
-    output_dir = Path(output_dir)
+    output_dir = image_path.parent
 
     # Проверяем, что файл существует
     if not image_path.is_file():
         raise FileNotFoundError(f"Файл не найден: {image_path}")
 
-    # Создаём папку, если её нет
-    output_dir.mkdir(parents=True, exist_ok=True)
     logging.info("Начинаем изменять размеры")
     # Открываем изображение
     with Image.open(image_path) as img:
         # Получаем имя файла без расширения
         base_name = image_path.stem
         ext = image_path.suffix.lower()  # .jpg, .png и т.д.
-
+        sizes = [i for i in range(1000, 2000, 300)]
+        # Размеры по большей стороне
         for size in sizes:
             # Вычисляем новые размеры, сохраняя пропорции
             img_width, img_height = img.size
@@ -49,7 +44,7 @@ def resize_and_save_image(image_path: Union[str, Path]) -> None:
 
             # Формируем имя файла
             new_file_name = f"{base_name}_{size}px{ext}"
-            output_path = os.path.join(output_dir, new_file_name)
+            output_path = output_dir / new_file_name
 
             # Сохраняем
             resized_img.save(output_path, quality=85, optimize=True)

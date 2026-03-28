@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
 
+from src.schemas.base_schema import ChangeBaseSchema
 
-class HotelCreateSchemas(BaseModel):
+
+class HotelCreateSchemas(ChangeBaseSchema):
     title: str = Field(..., description="Короткое название отеля")
     location: str = Field(..., description="Адрес отеля")
     description: str | None = Field(None, description="Описание отеля")
@@ -27,7 +29,7 @@ class HotelGetSchemas(HotelCreateSchemas):
     id: int = Field(..., description="ИД отеля")
 
 
-class HotelChangeSchemas(BaseModel):
+class HotelChangeSchemas(ChangeBaseSchema):
     title: str | None = Field(None, description="Новое короткое название")
     location: str | None = Field(None, description="Адрес отеля")
     description: str | None = Field(None, description="Новое описание")

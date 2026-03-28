@@ -7,7 +7,7 @@ from src.exceptions import (
     UserAlreadyExistedHTTPException,
     UserNotExistedHTTPException,
     IncorrectPasswordException,
-    IncorrectPasswordHTTPException,
+    IncorrectPasswordHTTPException, EmptyAttributesException, EmptyPasswordHTTPException,
 )
 from src.schemas.users_schemas import (
     UserRequestSchemas,
@@ -58,6 +58,9 @@ async def add_user(
 
     except AlreadyExistedException:
         raise UserAlreadyExistedHTTPException
+
+    except EmptyAttributesException:
+        raise EmptyPasswordHTTPException
 
     await db.commit()
     return {

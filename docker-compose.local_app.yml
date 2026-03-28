@@ -23,6 +23,8 @@ services:
       - bookingNetwork
     env_file:
       - .env
+    volumes:
+      - ./src/static:/app/static
     depends_on:
       migrations:
         condition: service_completed_successfully
@@ -36,6 +38,8 @@ services:
     command: "celery --app=src.tasks.celery_app:celery_instance worker -l INFO"
     env_file:
       - .env
+    volumes:
+      - ./src/static:/app/src/static
     depends_on:
       migrations:
         condition: service_completed_successfully

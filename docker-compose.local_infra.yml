@@ -14,8 +14,8 @@ services:
       - bookingNetwork
     restart: unless-stopped
     volumes:
-      - pg-booking-data:/var/lib/postgresql/data
-#      - ./backups:/docker-entrypoint-initdb.d #раскомить, если хочешь залить существующую БД,
+#      - pg-booking-data:/var/lib/postgresql/data
+      - ./backups:/docker-entrypoint-initdb.d #раскомить, если хочешь залить существующую БД,
       # но это надо делать при первом запуске или удали volumes: backend_course_pg-booking-data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]

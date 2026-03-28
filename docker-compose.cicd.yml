@@ -16,6 +16,8 @@ services:
     image: booking-api-image:latest
     networks:
       - bookingNetwork
+    volumes:
+      - ./src/static:/app/static
     depends_on:
       migrations:
         condition: service_completed_successfully
@@ -26,6 +28,8 @@ services:
     networks:
       - bookingNetwork
     command: "celery --app=src.tasks.celery_app:celery_instance worker -l INFO"
+    volumes:
+      - ./src/static:/app/static
     depends_on:
       migrations:
         condition: service_completed_successfully

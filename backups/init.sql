@@ -315,7 +315,6 @@ COPY public.facilities (id, title) FROM stdin;
 3	 WiFi
 4	туалет
 5	душ
-11	кондиционер
 \.
 
 
@@ -331,22 +330,15 @@ COPY public.hotels (id, title, location, description) FROM stdin;
 13	Resort spa Emir	Около ТаджМахала	Крутой отель в Египте
 15	Sochi	Сочи	\N
 16	Dybai	Дубай	отель в Дубаях
-17	Мальдивы	maldivi	\N
-18	Геленджик	gelendzhik	\N
 19	Москва	moscow	Самый крутой отель в Москве
-20	Казань	kazan	\N
-21	Санкт-Петербург	spb	\N
 22	Sochi	Сочи	\N
 26	Москва	moscow	Самый крутой отель в Москве
-27	Казань	kazan	\N
-28	Санкт-Петербург	spb	\N
-29	Sochy curort spa	в центре Сочи11111111	\N
-1	Sochy curort spa	у чера на куличках	Крутой отель в Египте
 2	Resort spa Emir	Около ТаджМахала	Крутой отель в Египте
 5	Resort spa Emir66666	Около ТаджМахала555555555	Крутой отель в Египт555555555555е
 3	Resort spa Emir333	Около Тад333жМахала	Крутой отель в Египт333е
 10	Resort spa Emir	Около ТаджМахала	Крутой отель в Египте
 4	New Sochi hotel444444444	Около ТаджМахала	Крутой отель в Египте
+1	Resort spa Emir	Около ТаджМахала	Крутой отель в Египте
 \.
 
 
@@ -401,10 +393,7 @@ COPY public.users (id, email, hashed_password, first_name, last_name, is_active,
 8	anikeev.mks2@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$zeANcwb3oiHBIkoazTU3Eg$YMezxiF+aTSOScZTm6Pa7fYpanjlWx51LpApGhk+UTU	Maks	Ananimus	t	user	2026-01-24 13:27:02.646415+00	2026-01-24 13:27:02.646415+00
 14	anikeev.mks@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$bLrB0yHVTF/9so/jaPbtoQ$oTuQQ7EmejoxvV03EHWWchivWMPAoZ6Y1BVfqqQT38E	Maks	Ananimus	t	user	2026-01-25 08:45:34.693663+00	2026-01-25 08:45:34.693663+00
 16	luchy@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$tKE2eL/+qb4cWyYPvTEVnw$rKlG0VFc456Fcf2UYMdeyzB96vOoKQcrSTZgQ9HtztU	\N	\N	t	user	2026-01-25 08:45:44.625711+00	2026-01-25 08:45:44.625711+00
-17	1luchy@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$/u81Ao2tIlnBKucAl6Ar6A$yW+mYmY/cFVKXyrkibBoh69kThPM6LmoGD3P2HZLYpA	\N	\N	t	user	2026-01-25 08:45:59.72309+00	2026-01-25 08:45:59.72309+00
 18	1anikeev.mks@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$XwCYdlTq4o9Sfp4dketOBA$uZWutWoLyyrRRI+6pOsPsGiVDTJsXqMTtHCMF52QEzA	Maks	Ananimus	t	user	2026-01-25 08:46:08.376541+00	2026-01-25 08:46:08.376541+00
-20	anikeev.mks1@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$YPmZkWMRsG3uMbw6+dseCQ$qW7DiFNoKVs4N5vqtnr+1So+QN4O7G/dt9JscTTbHwk	Maks	Ananimus	t	user	2026-01-25 09:45:29.270762+00	2026-01-25 09:45:29.270762+00
-22	av.mks@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$ap1X3/YiPAw9C4/CvMFLzw$dNJvaj1FDs05+DUUIONyfRdu6w3Nos/sjSRK2UkdLXU	Maksimus	Developer	t	user	2026-01-29 08:38:50.110714+00	2026-01-29 08:38:50.110714+00
 28	anikeev.maks@rambler.com	$argon2id$v=19$m=65536,t=3,p=4$+9z7e8vgd82UZIT7HszVuQ$VgitBTiOPV6a8ltz1Rg+OQRwV3ItbAz3rigq8oMDKrc	Maks	Ananimus	t	user	2026-03-16 13:53:32.992735+00	2026-03-16 13:53:32.992735+00
 \.
 
@@ -427,7 +416,7 @@ SELECT pg_catalog.setval('public.facilities_id_seq', 11, true);
 -- Name: hotels_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.hotels_id_seq', 33, true);
+SELECT pg_catalog.setval('public.hotels_id_seq', 35, true);
 
 
 --
@@ -448,7 +437,7 @@ SELECT pg_catalog.setval('public.rooms_id_seq', 38, true);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 29, true);
+SELECT pg_catalog.setval('public.users_id_seq', 33, true);
 
 
 --

@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
 
+from src.schemas.base_schema import ChangeBaseSchema
 
-class FacilitiesCreateSchemas(BaseModel):
+
+class FacilitiesCreateSchemas(ChangeBaseSchema):
     title: str = Field(..., description="Удобства в номере")
 
 
@@ -27,7 +29,7 @@ class FacilitiesGetSchemas(FacilitiesCreateSchemas):
     model_config = {"from_attributes": True}
 
 
-class RoomFacilitiesCreateSchemas(BaseModel):
+class RoomFacilitiesCreateSchemas(ChangeBaseSchema):
     room_id: int = Field(..., description="ИД номера")
     facility_id: int = Field(..., description="ИД удобства")
 

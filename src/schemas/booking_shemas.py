@@ -2,8 +2,10 @@ from datetime import datetime, date
 
 from pydantic import BaseModel, Field
 
+from src.schemas.base_schema import ChangeBaseSchema
 
-class BookingRequestSchemas(BaseModel):
+
+class BookingRequestSchemas(ChangeBaseSchema):
     room_id: int = Field(..., description="ИД номера")
     date_from: date = Field(..., description="Дата заезда")
     date_to: date = Field(..., description="Дата выезда")
@@ -52,7 +54,7 @@ class BookingGetSchemas(BookingCreateSchemas):
     created_at: datetime = Field(..., description="Дата регистрации бронирования")
 
 
-class BookingChangeSchemas(BaseModel):
+class BookingChangeSchemas(ChangeBaseSchema):
     date_from: date | None = Field(None, description="Дата заезда")
     date_to: date | None = Field(None, description="Дата выезда")
     price: int | None = Field(None, ge=1, description="Стоимость номера за сутки")
