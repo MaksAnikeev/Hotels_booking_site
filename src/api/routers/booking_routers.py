@@ -60,7 +60,7 @@ async def get_room_booking(
     }
 
 
-@router.post("/", summary="Создать бронирование")
+@router.post("", summary="Создать бронирование")
 async def add_booking(
     user_id: UserIDDep,
     db: DBDep,
