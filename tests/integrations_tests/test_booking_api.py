@@ -23,7 +23,7 @@ async def test_create_booking(
         "date_from": date_from,
         "date_to": date_to,
     }
-    response = await auth_ac.post("/bookings/", json=booking_data)
+    response = await auth_ac.post("/bookings", json=booking_data)
     assert response.status_code == status_code
     res = response.json()
     if response.status_code == 200:
@@ -55,7 +55,7 @@ async def test_add_and_get_bookings(
         "date_from": date_from,
         "date_to": date_to,
     }
-    response_booked = await auth_ac.post("/bookings/", json=booking_data)
+    response_booked = await auth_ac.post("/bookings", json=booking_data)
     assert response_booked.status_code == 200
 
     response = await auth_ac.get("/bookings/me", params={"date_from": "2026-02-10"})

@@ -4,19 +4,18 @@ from httpx import AsyncClient
 
 
 async def test_get_hotels(ac: AsyncClient):
-    response = await ac.get(url="/hotels/")
+    response = await ac.get(url="/hotels")
     assert response.status_code == 200
-    hotels = response.json()["data"]
+    hotels = response.json()
     assert len(hotels) == 5
 
 
 async def test_get_hotels_with_params(ac: AsyncClient):
     params = {"title": 5}
-    response = await ac.get(url="/hotels/", params=params)
+    response = await ac.get(url="/hotels", params=params)
     assert response.status_code == 200
     hotels = response.json()
-    assert "data" in hotels
-    assert hotels["data"][0]["location"] == "Краснодар"
+    assert hotels[0]["location"] == "Краснодар"
 
 
 async def test_get_free_hotels(ac: AsyncClient):
@@ -27,4 +26,4 @@ async def test_get_free_hotels(ac: AsyncClient):
     response = await ac.get(url="/hotels/free", params=params)
     assert response.status_code == 200
     free_hotels = response.json()
-    assert len(free_hotels["data"]) == 3
+    assert len(free_hotels) == 3

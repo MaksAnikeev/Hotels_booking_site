@@ -75,7 +75,7 @@ async def test_auth_flow(
         assert resp["description"] == "JWT token успешно создан"
         assert ac.cookies["access_token"] == resp["access_token"]
     elif response_log.status_code == 401:
-        assert resp["detail"] == "Неверно указан пароль"
+        assert resp["detail"] == "Неверно указан логин или пароль"
         return
     else:
         return
