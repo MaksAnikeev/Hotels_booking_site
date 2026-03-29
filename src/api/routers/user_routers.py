@@ -95,7 +95,14 @@ async def user_login(
 
 @router.post("/logout", summary="Удаление токена доступа. Разлогиневание")
 async def logout(response: Response):
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        "access_token",
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        path="/"
+    )
     return {
         "status": "success",
+        "message": "Вы успешно вышли из системы",
     }

@@ -135,7 +135,7 @@ class UserNotExistedHTTPException(CustomHTTPException):
 
 class IncorrectPasswordHTTPException(CustomHTTPException):
     status_code = 401
-    detail = "Неверно указан пароль"
+    detail = "Неверно указан логин или пароль"
 
 
 class IncorrectBookingDateHTTPException(CustomHTTPException):
@@ -150,12 +150,12 @@ class NotBookingDateHTTPException(CustomHTTPException):
 
 class NotAccessTokenHTTPException(CustomHTTPException):
     status_code = 401
-    detail = "Нет токена. Необходимо залогиниться"
+    detail = "Необходимо залогиниться"
 
 
 class WrongAccessTokenHTTPException(CustomHTTPException):
     status_code = 401
-    detail = "Некорректный токен. Необходимо залогиниться"
+    detail = "Необходимо залогиниться"
 
 
 class TimeoutAccessTokenHTTPException(CustomHTTPException):
