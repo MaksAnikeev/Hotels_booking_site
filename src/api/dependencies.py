@@ -1,7 +1,6 @@
 from typing import Annotated
 
-import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from starlette.requests import Request
 
 from src.database import async_session_factory

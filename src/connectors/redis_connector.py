@@ -22,7 +22,7 @@ class RedisConnector:
         try:
             await self._redis.ping()  # или .info() или .client_list()
             logging.info("Redis ping OK → подключение реально работает")
-        except redis_exc.ConnectionError as e:
+        except redis_exc.ConnectionError:
             logging.critical("Redis НЕ доступен при старте!")
             raise RuntimeError("Redis недоступен")
         logging.info(
@@ -44,4 +44,4 @@ class RedisConnector:
     async def close(self):
         if self._redis:
             await self._redis.close()
-            logging.warning(f"Подключение к Redis закрыто")
+            logging.warning("Подключение к Redis закрыто")

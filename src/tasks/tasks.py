@@ -1,7 +1,5 @@
 import asyncio
-import datetime
 import logging
-import os
 from typing import Union
 
 from PIL import Image

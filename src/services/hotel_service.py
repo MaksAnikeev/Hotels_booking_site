@@ -1,6 +1,6 @@
 from datetime import date
 
-from src.api.dependencies import PaginationDep, DBDep
+from src.api.dependencies import PaginationDep
 from src.api.routers.utils import check_date_to_after_date_from
 from src.schemas.hotels_schemas import (
     HotelGetSchemas,

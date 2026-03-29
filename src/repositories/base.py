@@ -1,5 +1,5 @@
 import logging
-from typing import List, Sequence, Any, Generic, Type
+from typing import List, Sequence, Any
 
 import sqlalchemy
 from asyncpg import UniqueViolationError, ForeignKeyViolationError
@@ -15,7 +15,6 @@ from src.exceptions import (
     TooManyObjectsException,
     AlreadyExistedException,
 )
-from src.repositories.mappers.base_mapp import DataMapper, DBModelType, SchemaType
 from src.repositories.utils import check_safe_filters
 
 

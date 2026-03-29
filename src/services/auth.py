@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException
 from pwdlib import PasswordHash
 import jwt
 
@@ -8,7 +7,8 @@ from src.config import settings
 from src.exceptions import (
     IncorrectPasswordException,
     WrongAccessToken,
-    TimeoutAccessToken, EmptyAttributesException,
+    TimeoutAccessToken,
+    EmptyAttributesException,
 )
 from src.schemas.users_schemas import (
     UserRequestSchemas,

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Query, HTTPException, status, Response
+from fastapi import APIRouter, Body, Query, Response
 
 from src.api.dependencies import PaginationDep, UserIDDep, DBDep
 from src.exceptions import (
@@ -7,13 +7,13 @@ from src.exceptions import (
     UserAlreadyExistedHTTPException,
     UserNotExistedHTTPException,
     IncorrectPasswordException,
-    IncorrectPasswordHTTPException, EmptyAttributesException, EmptyPasswordHTTPException,
+    IncorrectPasswordHTTPException,
+    EmptyAttributesException,
+    EmptyPasswordHTTPException,
 )
 from src.schemas.users_schemas import (
     UserRequestSchemas,
-    UserCreateSchemas,
     example_add_user,
-    UserRoleEnum,
 )
 from src.services.auth import AuthService
 
@@ -37,9 +37,7 @@ async def get_users(
     return {"status": "success", "data": users, "details": None}
 
 
-@router.get(
-    "/me", summary="🧑‍💻 Мой профиль"
-)
+@router.get("/me", summary="🧑‍💻 Мой профиль")
 async def who_are_me(
     user_id: UserIDDep,
     db: DBDep,
@@ -96,11 +94,7 @@ async def user_login(
 @router.post("/logout", summary="Удаление токена доступа. Разлогиневание")
 async def logout(response: Response):
     response.delete_cookie(
-        "access_token",
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        path="/"
+        "access_token", httponly=True, secure=False, samesite="lax", path="/"
     )
     return {
         "status": "success",

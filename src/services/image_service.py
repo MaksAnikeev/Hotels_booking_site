@@ -16,17 +16,19 @@ class ImageService(BaseService):
         Очищает имя файла от опасных символов, сохраняет юникод.
         """
         # 1. Берём только имя файла (без пути)
-        name = Path(filename).name
+        name = Path(filename)
 
         # 2. Разделяем имя и расширение
-        stem, ext = Path(filename).stem, Path(filename).suffix
+        stem, ext = name.stem, name.suffix
 
         # 3. 🔥 Убираем опасные символы из имени (оставляем буквы, цифры, -, _, пробелы, юникод)
         # Разрешаем: буквы (включая кириллицу), цифры, пробелы, -, _
-        safe_stem = re.sub(r'[^\w\s\-\u0400-\u04FF]', '_', stem)  # \u0400-\u04FF = кириллица
+        safe_stem = re.sub(
+            r"[^\w\s\-\u0400-\u04FF]", "_", stem
+        )  # \u0400-\u04FF = кириллица
 
         # 4. Заменяем множественные пробелы/подчёркивания на один
-        safe_stem = re.sub(r'[\s_]+', '_', safe_stem).strip('_')
+        safe_stem = re.sub(r"[\s_]+", "_", safe_stem).strip("_")
 
         # 5. Обрезаем если слишком длинное (макс. 200 символов для имени + расширение)
         max_len = 200 - len(ext)
@@ -51,9 +53,7 @@ class ImageService(BaseService):
                 return new_path
             counter += 1
 
-    def resize_image(
-            self, file: UploadFile, background_tasks: BackgroundTasks
-    ) -> str:
+    def resize_image(self, file: UploadFile, background_tasks: BackgroundTasks) -> str:
 
         # 1. Создаём папку
         self.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

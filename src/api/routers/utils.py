@@ -2,7 +2,6 @@ import smtplib
 from datetime import date
 from email.mime.text import MIMEText
 
-from fastapi import HTTPException
 
 from src.config import settings
 from src.exceptions import IncorrectBookingDateHTTPException

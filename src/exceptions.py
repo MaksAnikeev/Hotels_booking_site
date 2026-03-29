@@ -6,22 +6,23 @@ from fastapi.exceptions import RequestValidationError
 
 def init_exception_handlers(app_: FastAPI):
     @app_.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
         for error in exc.errors():
-            if error['type'] == 'extra_forbidden':
+            if error["type"] == "extra_forbidden":
                 return JSONResponse(
                     status_code=400,
                     content={
                         "status": "error",
                         "code": 400,
-                        "message": f"Недопустимые поля: {', '.join(error.get('loc', []))}"
-                    }
+                        "message": f"Недопустимые поля: {', '.join(error.get('loc', []))}",
+                    },
                 )
 
         # Остальные ошибки валидации
         return JSONResponse(
-            status_code=422,
-            content={"status": "error", "details": exc.errors()}
+            status_code=422, content={"status": "error", "details": exc.errors()}
         )
 
 
@@ -87,7 +88,9 @@ class TimeoutAccessToken(CustomException):
 
 
 class EmptyAttributesException(CustomException):
-    detail = "Переданный атрибут не может быть пустым или все переданный атрибуты пустые"
+    detail = (
+        "Переданный атрибут не может быть пустым или все переданный атрибуты пустые"
+    )
 
 
 class CustomHTTPException(HTTPException):
@@ -188,23 +191,21 @@ class NotAllowedParameterHTTPException(CustomHTTPException):
         " Уточните название изменяемых атрибутов"
     )
 
+
 class EmptyPasswordHTTPException(CustomHTTPException):
     status_code = 400
-    detail = (
-        "Пароль не может быть пустым"
-    )
+    detail = "Пароль не может быть пустым"
+
 
 class NotAnyAttributeHTTPException(CustomHTTPException):
     status_code = 400
-    detail = (
-        "Хотя бы одно поле должно быть непустым"
-    )
+    detail = "Хотя бы одно поле должно быть непустым"
+
 
 class EmptyRequestBodyHTTPException(CustomHTTPException):
     status_code = 400
-    detail = (
-        "Не передано ни одного параметра"
-    )
+    detail = "Не передано ни одного параметра"
+
 
 class FacilitiesAlreadyExistedHTTPException(CustomHTTPException):
     status_code = 409
