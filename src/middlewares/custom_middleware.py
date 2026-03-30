@@ -14,8 +14,7 @@ async def check_middleware(request: Request, call_next: Callable):
         response = await call_next(request)
         time_delta = time.perf_counter() - start_time
         logging.info(f"Время выполнения запроса: {round(time_delta, 3)} сек.")
-        response.headers["X-Special"] = 'New info'
+        response.headers["X-Special"] = "New info"
         return response
     else:
         return Response(status_code=429, content="запрос с неразрешенного  ip")
-

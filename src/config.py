@@ -34,17 +34,13 @@ class Settings(BaseSettings):
     @property
     def CORS_ORIGINS_LIST(self) -> list[str]:
         return [
-            origin.strip()
-            for origin in self.CORS_ORIGINS.split(",")
-            if origin.strip()
+            origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()
         ]
 
     @property
     def MIDDLEWARE_HOST_LIST(self) -> list[str]:
         return [
-            host.strip()
-            for host in self.MIDDLEWARE_HOST.split(",")
-            if host.strip()
+            host.strip() for host in self.MIDDLEWARE_HOST.split(",") if host.strip()
         ]
 
     @property
