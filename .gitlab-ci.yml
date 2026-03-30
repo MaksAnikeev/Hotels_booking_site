@@ -5,8 +5,6 @@ stages:
   - test
   - deploy
 
-default:
-  image: docker:24.0.7
 
 build-job:
   stage: build
