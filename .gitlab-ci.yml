@@ -7,7 +7,6 @@ stages:
 
 default:
   image: docker:24.0.7
-  pull_policy: if-not-present # Не скачивать каждый раз, если образ уже есть
 
 build-job:
   stage: build
@@ -26,7 +25,7 @@ Lint:
 Format:
   stage: lint_format
   script:
-    - docker run --rm --network bookingNetwork booking-api-image ruff format
+    - docker run --rm --network bookingNetwork booking-api-image ruff format --check
 
 
 Migrations:
