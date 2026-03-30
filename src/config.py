@@ -28,6 +28,25 @@ class Settings(BaseSettings):
 
     GOOGLE_EMAIL_PASSWORD: str
 
+    CORS_ORIGINS: str
+    MIDDLEWARE_HOST: str
+
+    @property
+    def CORS_ORIGINS_LIST(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.CORS_ORIGINS.split(",")
+            if origin.strip()
+        ]
+
+    @property
+    def MIDDLEWARE_HOST_LIST(self) -> list[str]:
+        return [
+            host.strip()
+            for host in self.MIDDLEWARE_HOST.split(",")
+            if host.strip()
+        ]
+
     @property
     def RADIS_URL(self):
         if self.REDIS_PASSWORD:

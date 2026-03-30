@@ -20,7 +20,7 @@ from src.services.auth import AuthService
 router = APIRouter(prefix="/user", tags=["Аутентификация и Авторизация"])
 
 
-@router.get("/", summary="Получить данные по пользователям")
+@router.get("/users", summary="Получить данные по пользователям")
 async def get_users(
     pagination: PaginationDep,
     db: DBDep,

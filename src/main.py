@@ -7,10 +7,13 @@ from pathlib import Path
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from sqlalchemy import text
+from starlette.middleware.cors import CORSMiddleware
 
 from src.api.routers.routers import init_routers
+from src.config import settings
 from src.database import async_session_factory_null_pull
 from src.exceptions import init_exception_handlers
+from src.middlewares import register_middleware
 from src.setup import redis_connector
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -38,6 +41,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS_LIST,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+register_middleware(app_=app)
 init_routers(app_=app)
 init_exception_handlers(app_=app)
 
