@@ -1,4 +1,9 @@
-# Установка
+# Backend для сайта, аналог бронирования отелей, типа "Островок". 
+Использованы технологии FastAPI с патернами DTO, DataMapper и разделением на слой эндпойнтов, сервисов, репозитория. 
+Также настроены тесты, работа с фоновыми задачами через celery и redis. Проект упакован в docker_compose
+и развернут на внешнем сервере. Настроен CICD на GitLab
+
+##  Установка
 1. На сервере установить git
 ~~~pycon
 sudo apt update
@@ -14,32 +19,54 @@ cd project/back
 git clone https://github.com/MaksAnikeev/it_bot.git .
 ~~~
 4. Создать файл `.env` в корне проекта и прописать туда переменные окружения
-TG_BOT_TOKEN - токен вашего бота, полученный у BotFather в ТГ
-PAYMENT_UKASSA_TOKEN - токен юкассы, если будете получать платежи через юкассу
+Параметры созданной БД
+DB_HOST=
+DB_PORT=
+DB_NAME=
+DB_USER=
+DB_PASS=
 
-данные пустой БД в постгри, она создастся автоматически по указанным вами данным
-POSTGRES_URL=postgres:
-POSTGRES_DB=
-POSTGRES_USER=
-POSTGRES_PASSWORD=
+REDIS_HOST=localhost # для запуска на локале
+REDIS_PORT=7379 # для запуска на локале
+#REDIS_HOST=booking_redis # для запуска в контейнерах
+#REDIS_PORT=6379 # для запуска в контейнерах
+
+GOOGLE_EMAIL_PASSWORD= # для использование ручки по отправке email со своего адреса (требуется регистрация через гугл)
+
+CORS_ORIGINS=*
+#CORS_ORIGINS=http://localhost:8081,https://anikeev-maks.ru - # для работы с CORS при запросе на бекенд с фронта
+#MIDDLEWARE_HOST=127.0.0.1,localhost # для работы кастомного middleware можно не раскомичивать
+
+для авторизации 
+JWT_SECRET_KEY=
+JWT_ALGORITHM=
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=
 
 Пример
 ~~~pycon
-TG_BOT_TOKEN=5012401124:AAFKCbhhGsDW3rh8mMQIJgcWOXEENU
-PAYMENT_UKASSA_TOKEN=381764678:TEST:119110
+MODE=LOCAL
 
-POSTGRES_URL=postgres://max:Anykey@pgdb:5432/get_course_td_bot
-POSTGRES_DB=get_course_td_bot
-POSTGRES_USER=max
-POSTGRES_PASSWORD=Anykey
+DB_HOST=localhost
+#DB_HOST=booking_db
+DB_PORT=5432
+DB_NAME=fastapi_db
+DB_USER=user
+DB_PASS=12345
 
-SECRET_KEY='django-insecure-&3s652n^nn_l-6l_i&%mc(7$ypwcs))007q%czm48tmjif&12#'
-DEBUG=False
-DJANGO_SUPERUSER_USERNAME=admin
-DJANGO_SUPERUSER_PASSWORD=admin
-DJANGO_SUPERUSER_EMAIL=admin@example.com
-ALLOWED_HOSTS=127.0.0.1,localhost,get_course_bot,nginx,84.38.180.226
-BASE_MEDIA_URL=http://nginx:80
+REDIS_HOST=localhost
+REDIS_PORT=7379
+#REDIS_HOST=booking_redis
+#REDIS_PORT=6379
+
+GOOGLE_EMAIL_PASSWORD=gcaxdfsfcbsmh
+
+CORS_ORIGINS=*
+#CORS_ORIGINS=http://localhost:8081,https://your-maks.ru
+#MIDDLEWARE_HOST=127.0.0.1,localhost
+
+JWT_SECRET_KEY=09d25e094faa6ca2556c818166b7a943tfsfa434caa6cf63b88e8d3e7
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 ~~~
 5. Установить `docker` и `docker compose`
 Установка docker
@@ -78,27 +105,29 @@ apt  install docker-compose
 
 sudo apt-get install docker-compose-plugin
 ~~~
-
-10. Теперь настройка сервера завершена и можно запускать установку проекта
+6Теперь настройка сервера завершена и можно запускать установку проекта
 ~~~pycon
 docker compose build
 ~~~
 Итог
 ~~~pycon
-[+] Building 2/2
- ✔ backend  Built                                                                                      0.0s
- ✔ bot      Built   
+[+] Building 4/4
+ ✔ pgdb Built                                                                                      0.0s
+ ✔ redis     Built  
+ ✔ nginx     Built  
+ ✔ booking_back_service     Built   
+......
 ~~~
-Начнутся создаваться контейнеры `pgdb, nginx, django_backend, it_bot-bot`
+Начнутся создаваться контейнеры `pgdb, nginx, booking_back_service, redis`
 ~~~pycon
 docker compose up –d
 ~~~
 Итог
-Начнутся запускатся контейнеры `pgdb, nginx, django_backend, it_bot-bot`
+Начнутся запускатся контейнеры `pgdb, nginx, booking_back_service, redis`
 
 Чтобы посмотреть логи в реальном времени можно набрать
 ~~~pycon
-docker-compose logs -f booking_back_service
+docker compose logs -f booking_back_service
 ~~~
 
 В проекте есть разделение на инфроструктурные контейнеры `pgdb, nginx, redis`
